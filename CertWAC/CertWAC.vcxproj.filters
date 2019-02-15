@@ -18,6 +18,9 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="certs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CertWAC.rc">
@@ -26,6 +29,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CertWAC.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="certs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

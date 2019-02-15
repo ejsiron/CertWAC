@@ -160,12 +160,14 @@
     <Manifest />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="certs.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CertWAC.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="certs.cpp" />
     <ClCompile Include="CertWAC.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
