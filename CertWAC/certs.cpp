@@ -28,6 +28,83 @@ void GetComputerCertificates()
 		if (CryptHashCertificate2(BCRYPT_SHA1_ALGORITHM, 0, NULL,
 			pCertContext->pbCertEncoded, pCertContext->cbCertEncoded, NULL, &CertHashSize))
 		{
+			// Subject Name
+			DWORD NameSize{ 0 };
+			NameSize = CertNameToStr(pCertContext->dwCertEncodingType, &pCertContext->pCertInfo->Subject,
+				CERT_OID_NAME_STR, NULL, NameSize);
+			if (NameSize)
+			{
+				auto RawName{ new wchar_t[NameSize] };
+				CertNameToStr(pCertContext->dwCertEncodingType, &pCertContext->pCertInfo->Subject,
+					CERT_OID_NAME_STR, RawName, NameSize);
+				OutputDebugString(RawName);
+				OutputDebugString(L"\r\n");
+				delete[] RawName;
+			}
+
+			// Issuer
+			NameSize = 0;
+			NameSize = CertNameToStr(pCertContext->dwCertEncodingType, &pCertContext->pCertInfo->Issuer,
+				CERT_OID_NAME_STR, NULL, NameSize);
+			if (NameSize)
+			{
+				auto RawName{ new wchar_t[NameSize] };
+				CertNameToStr(pCertContext->dwCertEncodingType, &pCertContext->pCertInfo->Issuer,
+					CERT_OID_NAME_STR, RawName, NameSize);
+				OutputDebugString(RawName);
+				OutputDebugString(L"\r\n");
+				delete[] RawName;
+			}
+
+			// Start
+			DWORD PropertyID{ 0 };
+			DWORD cbData{ 0 };
+			std::stringstream ss;
+			while (PropertyID = CertEnumCertificateContextProperties(pCertContext, PropertyID))
+			{
+				//if (CertGetCertificateContextProperty(pCertContext, PropertyID, NULL, &cbData))
+				//{
+				//	ss.clear();
+				//	ss << "Property: " << PropertyID << "\r\n";
+				//	std::string debugstring{ ss.str() };
+				//	OutputDebugStringA(debugstring.c_str());
+				//	switch (PropertyID)
+				//	{
+				//	case(CERT_ENHKEY_USAGE_PROP_ID):
+				//		auto RawEnhancedKeyUsage{ new BYTE[cbData] };
+				//		if (CertGetCertificateContextProperty(pCertContext, PropertyID, RawEnhancedKeyUsage, &cbData))
+				//		{
+				//			
+				//			for (auto i{ 0 }; i != ((CTL_USAGE*)RawEnhancedKeyUsage)->cUsageIdentifier; ++i)
+				//			{
+				//				OutputDebugStringA(((CTL_USAGE*)RawEnhancedKeyUsage)->rgpszUsageIdentifier[i]);
+				//			}
+				//		}
+				//		break;
+				//	}
+				//}//else broken
+			}
+
+			//BOOL CertGetEnhancedKeyUsage(
+			//	PCCERT_CONTEXT     pCertContext,
+			//	DWORD              dwFlags,
+			//	PCERT_ENHKEY_USAGE pUsage,
+			//	DWORD              *pcbUsage
+			//);
+
+			// Enhanced Key Usage
+			DWORD EnhancedKeyUsageSize{ 0 };
+			if (CertGetEnhancedKeyUsage(pCertContext, 0, NULL, &EnhancedKeyUsageSize))
+			{
+				PCERT_ENHKEY_USAGE pKeyEnhancedKeyUsage{ (CERT_ENHKEY_USAGE*)(new char[EnhancedKeyUsageSize]) };
+				if (CertGetEnhancedKeyUsage(pCertContext, 0, pKeyEnhancedKeyUsage, &EnhancedKeyUsageSize))
+				{
+					OutputDebugString(L"Well at least that worked\r\n");
+					
+				}
+				delete[] pKeyEnhancedKeyUsage;
+			}
+
 			// thumbprint
 			auto pCertHash{ new BYTE[CertHashSize] };
 			SecureZeroMemory(pCertHash, sizeof(BYTE) * CertHashSize);
