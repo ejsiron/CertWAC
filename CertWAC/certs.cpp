@@ -56,41 +56,8 @@ void GetComputerCertificates()
 				delete[] RawName;
 			}
 
-			// Start
-			DWORD PropertyID{ 0 };
-			DWORD cbData{ 0 };
-			std::stringstream ss;
-			while (PropertyID = CertEnumCertificateContextProperties(pCertContext, PropertyID))
-			{
-				//if (CertGetCertificateContextProperty(pCertContext, PropertyID, NULL, &cbData))
-				//{
-				//	ss.clear();
-				//	ss << "Property: " << PropertyID << "\r\n";
-				//	std::string debugstring{ ss.str() };
-				//	OutputDebugStringA(debugstring.c_str());
-				//	switch (PropertyID)
-				//	{
-				//	case(CERT_ENHKEY_USAGE_PROP_ID):
-				//		auto RawEnhancedKeyUsage{ new BYTE[cbData] };
-				//		if (CertGetCertificateContextProperty(pCertContext, PropertyID, RawEnhancedKeyUsage, &cbData))
-				//		{
-				//			
-				//			for (auto i{ 0 }; i != ((CTL_USAGE*)RawEnhancedKeyUsage)->cUsageIdentifier; ++i)
-				//			{
-				//				OutputDebugStringA(((CTL_USAGE*)RawEnhancedKeyUsage)->rgpszUsageIdentifier[i]);
-				//			}
-				//		}
-				//		break;
-				//	}
-				//}//else broken
-			}
-
-			//BOOL CertGetEnhancedKeyUsage(
-			//	PCCERT_CONTEXT     pCertContext,
-			//	DWORD              dwFlags,
-			//	PCERT_ENHKEY_USAGE pUsage,
-			//	DWORD              *pcbUsage
-			//);
+			auto Start = pCertContext->pCertInfo->NotBefore;
+			auto Expire = pCertContext->pCertInfo->NotAfter;
 
 			// Enhanced Key Usage
 			DWORD EnhancedKeyUsageSize{ 0 };
@@ -99,11 +66,41 @@ void GetComputerCertificates()
 				PCERT_ENHKEY_USAGE pKeyEnhancedKeyUsage{ (CERT_ENHKEY_USAGE*)(new char[EnhancedKeyUsageSize]) };
 				if (CertGetEnhancedKeyUsage(pCertContext, 0, pKeyEnhancedKeyUsage, &EnhancedKeyUsageSize))
 				{
-					OutputDebugString(L"Well at least that worked\r\n");
+					for (auto i{ 0 }; i != pKeyEnhancedKeyUsage->cUsageIdentifier; ++i)
+					{
+						OutputDebugString(L"EKU: ");
+						OutputDebugStringA(pKeyEnhancedKeyUsage->rgpszUsageIdentifier[i]);
+						OutputDebugString(L"\r\n");
+					}
 					
 				}
 				delete[] pKeyEnhancedKeyUsage;
 			}
+
+			// SAN
+			PCERT_EXTENSION AlternateNameExtension;
+			PCERT_ALT_NAME_INFO pAlternateNameInfo;
+			DWORD dwAlternateNameInfoSize;
+
+			/*if (AlternateNameExtension = CertFindExtension(szOID_SUBJECT_ALT_NAME, pCertContext->pCertInfo->cExtension, pCertContext->pCertInfo->rgExtension))
+			{
+				OutputDebugString(L"Found the alternate name extension\r\n");
+				if (CryptDecodeObjectEx(pCertContext->dwCertEncodingType, AlternateNameExtension->pszObjId,
+					(BYTE*)&AlternateNameExtension->Value, sizeof(CERT_EXTENSION), CRYPT_DECODE_ALLOC_FLAG,
+					NULL, &pAlternateNameInfo, &dwAlternateNameInfoSize))
+				{
+					LocalFree(pAlternateNameInfo);
+					OutputDebugString(L"Decoded the alternate name extension\r\n");
+				}
+				else
+				{
+					OutputDebugString(L"Did not decode the ane\r\n");
+				}
+			}
+			else
+			{
+				OutputDebugString(L"Could not find the alternate name extension\r\n");
+			}*/
 
 			// thumbprint
 			auto pCertHash{ new BYTE[CertHashSize] };
