@@ -72,35 +72,41 @@ void GetComputerCertificates()
 						OutputDebugStringA(pKeyEnhancedKeyUsage->rgpszUsageIdentifier[i]);
 						OutputDebugString(L"\r\n");
 					}
-					
+
 				}
 				delete[] pKeyEnhancedKeyUsage;
 			}
 
 			// SAN
-			PCERT_EXTENSION AlternateNameExtension;
-			PCERT_ALT_NAME_INFO pAlternateNameInfo;
+			PCERT_EXTENSION Extension = nullptr;
+			PCERT_ALT_NAME_INFO pAlternateNameInfo = nullptr;
+			PCERT_ALT_NAME_ENTRY pAlternateNameEntry = nullptr;
 			DWORD dwAlternateNameInfoSize;
 
-			/*if (AlternateNameExtension = CertFindExtension(szOID_SUBJECT_ALT_NAME, pCertContext->pCertInfo->cExtension, pCertContext->pCertInfo->rgExtension))
+			std::string ExtensionOID{};
+			for (auto i{ 0 }; i != pCertContext->pCertInfo->cExtension; ++i)
 			{
-				OutputDebugString(L"Found the alternate name extension\r\n");
-				if (CryptDecodeObjectEx(pCertContext->dwCertEncodingType, AlternateNameExtension->pszObjId,
-					(BYTE*)&AlternateNameExtension->Value, sizeof(CERT_EXTENSION), CRYPT_DECODE_ALLOC_FLAG,
-					NULL, &pAlternateNameInfo, &dwAlternateNameInfoSize))
+				Extension = &pCertContext->pCertInfo->rgExtension[i];
+				ExtensionOID.assign(Extension->pszObjId);
+				if (ExtensionOID == szOID_SUBJECT_ALT_NAME || ExtensionOID == szOID_SUBJECT_ALT_NAME2)
 				{
-					LocalFree(pAlternateNameInfo);
-					OutputDebugString(L"Decoded the alternate name extension\r\n");
-				}
-				else
-				{
-					OutputDebugString(L"Did not decode the ane\r\n");
+					DWORD DataSize{ 0 };
+					if (CryptFormatObject(pCertContext->dwCertEncodingType, 0, 0, NULL, szOID_SUBJECT_ALT_NAME2,
+						Extension->Value.pbData, Extension->Value.cbData, NULL, &DataSize))
+					{
+						std::wstring AlternateName{};
+						AlternateName.reserve(DataSize);
+						if (CryptFormatObject(pCertContext->dwCertEncodingType, 0, 0, NULL, szOID_SUBJECT_ALT_NAME2,
+							Extension->Value.pbData, Extension->Value.cbData,
+							(void*)AlternateName.data(), &DataSize))
+						{
+							OutputDebugString(L"Data: ");
+							OutputDebugString(AlternateName.c_str());
+							OutputDebugString(L"\r\n");
+						}
+					}
 				}
 			}
-			else
-			{
-				OutputDebugString(L"Could not find the alternate name extension\r\n");
-			}*/
 
 			// thumbprint
 			auto pCertHash{ new BYTE[CertHashSize] };
@@ -119,7 +125,7 @@ void GetComputerCertificates()
 			}
 			delete[] pCertHash;
 
-			
+
 		}
 	}
 
