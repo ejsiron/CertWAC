@@ -18,7 +18,13 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="certs.h">
+    <ClInclude Include="InstallInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ErrorRecord.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ComputerCertificate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -31,7 +37,13 @@
     <ClCompile Include="CertWAC.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="certs.cpp">
+    <ClCompile Include="InstallInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ErrorRecord.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LoadCertificates.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

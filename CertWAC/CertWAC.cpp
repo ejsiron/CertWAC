@@ -1,8 +1,16 @@
 #include <Windows.h>
 #include <tchar.h>
+#include <string>
 #include <utility>
 #include "resource.h"
-#include "certs.h"
+#include "ComputerCertificate.h"
+#include "InstallInfo.h"
+#include "ErrorRecord.h"
+
+std::wstring FormatErrorForDialog(const DWORD ErrorCode, const std::wstring& ErrorMessage, const std::wstring& Activity)
+{
+	return std::wstring{ L"Activity: " + Activity + L"\r\nErrorCode: " + std::to_wstring(ErrorCode) + L": " + ErrorMessage };
+}
 
 INT_PTR CALLBACK DialogProc(HWND hDialog, UINT uMessage, WPARAM wParam, LPARAM lParam)
 {
@@ -29,8 +37,28 @@ INT_PTR CALLBACK DialogProc(HWND hDialog, UINT uMessage, WPARAM wParam, LPARAM l
 	return FALSE;
 }
 
-int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
+
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
+	auto[RegistryError, MSICmdline] = GetMSIModifyPath();
+	auto r = RegistryError.GetErrorCode();
+	//if (RegistryError.GetErrorCode() > 0)
+	//{
+	//	MessageBox(NULL, FormatErrorForDialog(
+	//		RegistryError.GetErrorCode(), RegistryError.GetErrorMessage(), RegistryError.GetActivity()).c_str(),
+	//		L"Installation Detection Error", MB_OK);
+	//}
+
+	auto[CertError, CertificateList] = GetComputerCertificates();
+	if (CertificateList.size())
+	{
+		MessageBox(NULL, L"We got some", L"Certs", MB_OK);
+	}
+	else
+	{
+		MessageBox(NULL, L"We got none", L"Certs", MB_OK);
+	}
+
 	HWND hMainDialog{ CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_MAIN), 0, DialogProc, 0) };
 	ShowWindow(hMainDialog, nCmdShow);
 	MSG msg;
