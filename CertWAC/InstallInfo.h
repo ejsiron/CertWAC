@@ -3,4 +3,4 @@
 #include <string>
 #include "ErrorRecord.h"
 
-std::pair<ErrorRecord, std::wstring> GetMSIModifyPath();
+std::pair<ErrorRecord, std::wstring> GetMSIModifyPath() noexcept;

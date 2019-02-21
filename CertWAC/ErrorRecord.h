@@ -13,8 +13,7 @@ public:
 	ErrorRecord& operator=(const ErrorRecord&) = default;
 	ErrorRecord(ErrorRecord&&) = default;
 	ErrorRecord& operator=(ErrorRecord&&) = default;
-	const DWORD GetErrorCode() const noexcept 
-	{ return ErrorCode; }
+	const DWORD GetErrorCode() const noexcept { return ErrorCode; }
 	const std::wstring GetErrorMessage() const noexcept;
 	const std::wstring GetActivity() const noexcept { return Activity; }
 };

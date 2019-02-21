@@ -1,5 +1,7 @@
 #include <Windows.h>
 #include <wincrypt.h>
+#include <iomanip>
+#include <sstream>
 #include "ComputerCertificate.h"
 #pragma comment(lib, "crypt32.lib")
 #pragma comment(lib, "NCrypt.lib")
@@ -13,8 +15,8 @@ private:
 public:
 	CertificateStore(HCERTSTORE NewStore) :Store(NewStore) {}
 	~CertificateStore() { if (Store) CertCloseStore(Store, 0); }
-	HCERTSTORE operator()() { return Store; }
-	const bool IsValid() const { return Store != nullptr; }
+	HCERTSTORE operator()() noexcept { return Store; }
+	const bool IsValid() const noexcept { return Store != nullptr; }
 };
 
 enum class CertNames
@@ -23,7 +25,7 @@ enum class CertNames
 	Issuer
 };
 
-static std::wstring GetNameFromCertificate(PCCERT_CONTEXT pCertContext, CertNames DesiredCertName)
+static std::wstring GetNameFromCertificate(PCCERT_CONTEXT pCertContext, CertNames DesiredCertName) noexcept
 {
 	PCERT_NAME_BLOB DesiredName;
 	switch (DesiredCertName)
@@ -48,7 +50,7 @@ static std::wstring GetNameFromCertificate(PCCERT_CONTEXT pCertContext, CertName
 	return CertName;
 }
 
-std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates()
+std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates() noexcept
 {
 	const wchar_t* StoreName{ L"MY" };
 	std::vector<ComputerCertificate> Certificates{};
@@ -64,87 +66,96 @@ std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates
 	PCCERT_CONTEXT pCertContext{ nullptr };
 	while (pCertContext = CertEnumCertificatesInStore(ComputerStore(), pCertContext))
 	{
-		DWORD CertHashSize{ 0 };
-		if (CryptHashCertificate2(BCRYPT_SHA1_ALGORITHM, 0, NULL,
-			pCertContext->pbCertEncoded, pCertContext->cbCertEncoded, NULL, &CertHashSize))
+		ComputerCertificate ThisCert{};
+		ThisCert.SubjectName = GetNameFromCertificate(pCertContext, CertNames::Subject);
+		ThisCert.Issuer = GetNameFromCertificate(pCertContext, CertNames::Issuer);
+		ThisCert.ValidFrom = pCertContext->pCertInfo->NotBefore;
+		ThisCert.ValidTo = pCertContext->pCertInfo->NotAfter;
+
+		// Enhanced Key Usage
+		DWORD EnhancedKeyUsageSize{ 0 };
+		if (CertGetEnhancedKeyUsage(pCertContext, 0, NULL, &EnhancedKeyUsageSize))
 		{
-			ComputerCertificate ThisCert{};
-			ThisCert.SubjectName = GetNameFromCertificate(pCertContext, CertNames::Subject);
-			ThisCert.Issuer = GetNameFromCertificate(pCertContext, CertNames::Issuer);
-			ThisCert.ValidFrom = pCertContext->pCertInfo->NotBefore;
-			ThisCert.ValidTo = pCertContext->pCertInfo->NotAfter;
-
-			// Enhanced Key Usage
-			DWORD EnhancedKeyUsageSize{ 0 };
-			if (CertGetEnhancedKeyUsage(pCertContext, 0, NULL, &EnhancedKeyUsageSize))
+			PCERT_ENHKEY_USAGE pKeyEnhancedKeyUsage{ (CERT_ENHKEY_USAGE*)(new char[EnhancedKeyUsageSize]) };
+			if (CertGetEnhancedKeyUsage(pCertContext, 0, pKeyEnhancedKeyUsage, &EnhancedKeyUsageSize))
 			{
-				PCERT_ENHKEY_USAGE pKeyEnhancedKeyUsage{ (CERT_ENHKEY_USAGE*)(new char[EnhancedKeyUsageSize]) };
-				if (CertGetEnhancedKeyUsage(pCertContext, 0, pKeyEnhancedKeyUsage, &EnhancedKeyUsageSize))
+				for (auto i{ 0 }; i != pKeyEnhancedKeyUsage->cUsageIdentifier; ++i)
 				{
-					for (auto i{ 0 }; i != pKeyEnhancedKeyUsage->cUsageIdentifier; ++i)
+					if (std::string{ ServerAuthenticationOID } == std::string{ pKeyEnhancedKeyUsage->rgpszUsageIdentifier[i] })
 					{
-						if (std::string{ ServerAuthenticationOID } == std::string{ pKeyEnhancedKeyUsage->rgpszUsageIdentifier[i] })
-						{
-							ThisCert.ServerAuthentication = true;
-						}
-					}
-
-				}
-				delete[] pKeyEnhancedKeyUsage;
-			}
-
-			// SAN
-			PCERT_EXTENSION Extension = nullptr;
-			PCERT_ALT_NAME_INFO pAlternateNameInfo = nullptr;
-			PCERT_ALT_NAME_ENTRY pAlternateNameEntry = nullptr;
-			DWORD dwAlternateNameInfoSize;
-
-			std::string ExtensionOID{};
-			for (auto i{ 0 }; i != pCertContext->pCertInfo->cExtension; ++i)
-			{
-				Extension = &pCertContext->pCertInfo->rgExtension[i];
-				ExtensionOID.assign(Extension->pszObjId);
-				if (ExtensionOID == szOID_SUBJECT_ALT_NAME || ExtensionOID == szOID_SUBJECT_ALT_NAME2)
-				{
-					DWORD DataSize{ 0 };
-					if (CryptFormatObject(pCertContext->dwCertEncodingType, 0, 0, NULL, szOID_SUBJECT_ALT_NAME2,
-						Extension->Value.pbData, Extension->Value.cbData, NULL, &DataSize))
-					{
-						std::wstring AlternateName{};
-						AlternateName.reserve(DataSize);
-						if (CryptFormatObject(pCertContext->dwCertEncodingType, 0, 0, NULL, szOID_SUBJECT_ALT_NAME2,
-							Extension->Value.pbData, Extension->Value.cbData,
-							(void*)AlternateName.data(), &DataSize))
-						{
-							ThisCert.SubjectAlternateNames.emplace_back(AlternateName);
-						}
+						ThisCert.ServerAuthentication = true;
 					}
 				}
-			}
 
-			// thumbprint
-			ThisCert.Thumbprint.reserve(CertHashSize);
-			CryptHashCertificate2(BCRYPT_SHA1_ALGORITHM, 0, NULL, pCertContext->pbCertEncoded,
-				pCertContext->cbCertEncoded, ThisCert.Thumbprint.data(), &CertHashSize);
-
-			// detect private key
-			HCRYPTPROV_OR_NCRYPT_KEY_HANDLE PrivateKeyHandle;
-			DWORD PrivateKeyInfo{ 0 };
-			DWORD KeySpec{ 0 };
-			BOOL MustFree{ FALSE };
-			if (CryptAcquireCertificatePrivateKey(pCertContext, CRYPT_ACQUIRE_SILENT_FLAG | CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG, NULL, &PrivateKeyHandle, &KeySpec, &MustFree))
-			{
-				ThisCert.PrivateKey = true;
-				if (MustFree)
-				{
-					if (KeySpec == CERT_NCRYPT_KEY_SPEC) { NCryptFreeObject(PrivateKeyHandle); }
-					else { CryptReleaseContext(PrivateKeyHandle, 0); }
-				}
 			}
-			Certificates.emplace_back(ThisCert);
+			delete[] pKeyEnhancedKeyUsage;
 		}
-	}
 
+		// SAN
+		PCERT_EXTENSION Extension = nullptr;
+		PCERT_ALT_NAME_INFO pAlternateNameInfo = nullptr;
+		PCERT_ALT_NAME_ENTRY pAlternateNameEntry = nullptr;
+		DWORD dwAlternateNameInfoSize;
+
+		std::string ExtensionOID{};
+		for (auto i{ 0 }; i != pCertContext->pCertInfo->cExtension; ++i)
+		{
+			Extension = &pCertContext->pCertInfo->rgExtension[i];
+			ExtensionOID.assign(Extension->pszObjId);
+			if (ExtensionOID == szOID_SUBJECT_ALT_NAME || ExtensionOID == szOID_SUBJECT_ALT_NAME2)
+			{
+				DWORD DataSize{ 0 };
+				if (CryptFormatObject(pCertContext->dwCertEncodingType, 0, 0, NULL, szOID_SUBJECT_ALT_NAME2,
+					Extension->Value.pbData, Extension->Value.cbData, NULL, &DataSize))
+				{
+					std::wstring AlternateName{};
+					AlternateName.reserve(DataSize);
+					if (CryptFormatObject(pCertContext->dwCertEncodingType, 0, 0, NULL, szOID_SUBJECT_ALT_NAME2,
+						Extension->Value.pbData, Extension->Value.cbData,
+						(void*)AlternateName.data(), &DataSize))
+					{
+						ThisCert.SubjectAlternateNames.emplace_back(AlternateName);
+					}
+				}
+			}
+		}
+
+		// thumbprint
+		DWORD CertSHA1HashSize{ 0 };
+		if (CryptHashCertificate2(BCRYPT_SHA1_ALGORITHM, 0, NULL, pCertContext->pbCertEncoded,
+			pCertContext->cbCertEncoded, NULL, &CertSHA1HashSize))
+		{
+			std::vector<BYTE> ThumbprintBytes;
+			ThumbprintBytes.resize(CertSHA1HashSize);
+			if (CryptHashCertificate2(BCRYPT_SHA1_ALGORITHM, 0, NULL, pCertContext->pbCertEncoded,
+				pCertContext->cbCertEncoded, ThumbprintBytes.data(), &CertSHA1HashSize))
+			{
+				std::wstringstream HashStream;
+				HashStream << std::hex;
+				for (auto const& HashByte : ThumbprintBytes)
+				{
+					HashStream << std::setw(2) << std::setfill(L'0') << HashByte;
+				}
+				ThisCert.Thumbprint.assign(HashStream.str());
+			}
+		}
+		
+		// detect private key
+		HCRYPTPROV_OR_NCRYPT_KEY_HANDLE PrivateKeyHandle;
+		DWORD PrivateKeyInfo{ 0 };
+		DWORD KeySpec{ 0 };
+		BOOL MustFree{ FALSE };
+		if (CryptAcquireCertificatePrivateKey(pCertContext, CRYPT_ACQUIRE_SILENT_FLAG | CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG, NULL, &PrivateKeyHandle, &KeySpec, &MustFree))
+		{
+			ThisCert.PrivateKey = true;
+			if (MustFree)
+			{
+				if (KeySpec == CERT_NCRYPT_KEY_SPEC) { NCryptFreeObject(PrivateKeyHandle); }
+				else { CryptReleaseContext(PrivateKeyHandle, 0); }
+			}
+		}
+		Certificates.emplace_back(ThisCert);
+	}
 	if (pCertContext != nullptr)
 		CertFreeCertificateContext(pCertContext);
 

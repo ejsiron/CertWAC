@@ -171,16 +171,19 @@
     <ClInclude Include="ErrorRecord.h" />
     <ClInclude Include="ComputerCertificate.h" />
     <ClInclude Include="InstallInfo.h" />
+    <ClInclude Include="MainDialog.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CertWAC.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ComputerCertificate.cpp" />
     <ClCompile Include="LoadCertificates.cpp" />
     <ClCompile Include="CertWAC.cpp" />
     <ClCompile Include="InstallInfo.cpp" />
     <ClCompile Include="ErrorRecord.cpp" />
+    <ClCompile Include="MainDialog.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

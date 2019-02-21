@@ -27,6 +27,9 @@
     <ClInclude Include="ComputerCertificate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MainDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CertWAC.rc">
@@ -44,6 +47,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="LoadCertificates.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ComputerCertificate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

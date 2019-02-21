@@ -13,25 +13,25 @@ const wchar_t* AppModifyPathFieldName{ L"ModifyPath" };
 constexpr DWORD REG_ACCESS{ KEY_READ | KEY_WOW64_64KEY };
 constexpr DWORD KVPValueLength{ 1024 };
 
-auto DeleteHKEY = [](HKEY Key) { RegCloseKey(Key); };
+auto DeleteHKEY = [](HKEY Key) noexcept { RegCloseKey(Key); };
 
 using RegistryKey = std::unique_ptr<HKEY__, decltype(DeleteHKEY)>;
 
-static std::pair<LSTATUS, RegistryKey> OpenRegistryKey(HKEY StartKey, const std::wstring& SubkeyName)
+static std::pair<LSTATUS, RegistryKey> OpenRegistryKey(HKEY StartKey, const std::wstring& SubkeyName) noexcept
 {
 	HKEY DesiredKey{ 0 };
 	LSTATUS Result{ RegOpenKeyEx(StartKey, SubkeyName.c_str(), 0, REG_ACCESS, &DesiredKey) };
 	return std::make_pair(Result, RegistryKey(DesiredKey, DeleteHKEY));
 }
 
-static std::pair<LSTATUS, DWORD> GetMaxSubkeyNameLength(HKEY ParentKey)
+static std::pair<LSTATUS, DWORD> GetMaxSubkeyNameLength(HKEY ParentKey) noexcept
 {
 	DWORD MaxSubkeySize{ 0 };
 	LSTATUS SizeQueryResult{ RegQueryInfoKey(ParentKey, NULL, NULL, NULL, NULL, &MaxSubkeySize, NULL, NULL, NULL, NULL, NULL, NULL) };
 	return std::make_pair(SizeQueryResult, MaxSubkeySize);
 }
 
-static std::pair<LSTATUS, std::wstring> GetKVPStringValue(HKEY ParentKey, const wchar_t* KVPKeyName)
+static std::pair<LSTATUS, std::wstring> GetKVPStringValue(HKEY ParentKey, const wchar_t* KVPKeyName) noexcept
 {
 	DWORD ValueType;
 	DWORD RetrievedValueLength{ KVPValueLength };
@@ -46,7 +46,7 @@ static std::pair<LSTATUS, std::wstring> GetKVPStringValue(HKEY ParentKey, const 
 	return std::make_pair(ValueQueryResult, std::wstring{ ReceiveBuffer });
 }
 
-static std::pair<LSTATUS, std::optional<RegistryKey>> FindSubkeyWithExpectedKVP(HKEY ParentKey, const wchar_t* KVPKeyName, const wchar_t* KVPKeyValue)
+static std::pair<LSTATUS, std::optional<RegistryKey>> FindSubkeyWithExpectedKVP(HKEY ParentKey, const wchar_t* KVPKeyName, const wchar_t* KVPKeyValue) noexcept
 {
 	auto[ActionResult, SubkeyNameLength] = GetMaxSubkeyNameLength(ParentKey);
 	if (ActionResult == ERROR_SUCCESS)
@@ -79,7 +79,7 @@ static std::pair<LSTATUS, std::optional<RegistryKey>> FindSubkeyWithExpectedKVP(
 	return std::make_pair(ActionResult, std::nullopt);
 }
 
-std::pair<ErrorRecord, std::wstring> GetMSIModifyPath()
+std::pair<ErrorRecord, std::wstring> GetMSIModifyPath() noexcept
 {
 	std::wstring MSICmd{};
 	HKEY RawInstallKey{ 0 };
