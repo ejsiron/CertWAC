@@ -3,12 +3,29 @@
 #include "InstallInfo.h"
 #include "MainDialog.h"
 
-static std::wstring FormatErrorForDialog(const DWORD ErrorCode, const std::wstring& ErrorMessage, const std::wstring& Activity) noexcept
+void InitDialog() noexcept
+{
+	//auto[RegistryError, ModifyPath] = GetMSIModifyPath();
+	//auto ErrorCode = RegistryError.GetErrorCode();
+	//if (ErrorCode > 0)
+	//{
+	//	MessageBox(DialogHandle, FormatErrorForPopup(
+	//		ErrorCode, RegistryError.GetErrorMessage(), RegistryError.GetActivity()).c_str(),
+	//		L"Installation Detection Error", MB_OK);
+	//	PostQuitMessage(ErrorCode);
+	//}
+	//else
+	//{
+
+	//}
+}
+
+static std::wstring FormatErrorForPopup(const DWORD ErrorCode, const std::wstring& ErrorMessage, const std::wstring& Activity) noexcept
 {
 	return std::wstring{ L"Activity: " + Activity + L"\r\nErrorCode: " + std::to_wstring(ErrorCode) + L": " + ErrorMessage };
 }
 
-static INT_PTR CALLBACK DialogProc(HWND hDialog, UINT uMessage, WPARAM wParam, LPARAM lParam) noexcept
+INT_PTR CALLBACK DialogProc(HWND hDialog, UINT uMessage, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMessage)
 	{
@@ -24,7 +41,7 @@ static INT_PTR CALLBACK DialogProc(HWND hDialog, UINT uMessage, WPARAM wParam, L
 		}
 		break;
 	case WM_INITDIALOG:
-		
+		//InitDialog();
 		break;
 	case WM_CLOSE:
 		DestroyWindow(hDialog);
@@ -35,6 +52,7 @@ static INT_PTR CALLBACK DialogProc(HWND hDialog, UINT uMessage, WPARAM wParam, L
 	}
 	return FALSE;
 }
+
 
 MainDialog::MainDialog(HINSTANCE Instance) : AppInstance(Instance)
 {

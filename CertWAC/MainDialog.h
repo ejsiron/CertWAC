@@ -9,6 +9,7 @@ private:
 	HINSTANCE AppInstance;
 	HWND DialogHandle;
 	std::vector<ComputerCertificate> Certificates{};
+	std::wstring MSIModifyPath{};
 
 public:
 	MainDialog(HINSTANCE Instance);
