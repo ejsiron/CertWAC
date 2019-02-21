@@ -1,6 +1,6 @@
 #include "ErrorRecord.h"
 
-const std::wstring ErrorRecord::GetErrorMessage() const noexcept
+const std::wstring ErrorRecord::GetErrorMessage(DWORD ErrorCode) noexcept
 {
 	std::wstring ErrorMessage{};
 	LPTSTR szLocalErrorBuffer{ nullptr };

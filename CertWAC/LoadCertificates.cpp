@@ -95,7 +95,6 @@ std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates
 		PCERT_EXTENSION Extension = nullptr;
 		PCERT_ALT_NAME_INFO pAlternateNameInfo = nullptr;
 		PCERT_ALT_NAME_ENTRY pAlternateNameEntry = nullptr;
-		DWORD dwAlternateNameInfoSize;
 
 		std::string ExtensionOID{};
 		for (auto i{ 0 }; i != pCertContext->pCertInfo->cExtension; ++i)

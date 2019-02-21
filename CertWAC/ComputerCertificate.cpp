@@ -35,5 +35,5 @@ const bool ComputerCertificate::IsWithinValidityPeriod() const noexcept
 	ULONGLONG qwNow{ (((ULONGLONG)ValidFrom.dwHighDateTime) << 32) + ValidFrom.dwLowDateTime };
 	ULONGLONG qwValidFrom{ (((ULONGLONG)ValidFrom.dwHighDateTime) << 32) + ValidFrom.dwLowDateTime };
 	ULONGLONG qwValidTo{ (((ULONGLONG)ValidTo.dwHighDateTime) << 32) + ValidTo.dwLowDateTime };
-	return qwValidFrom < qwNow < qwValidTo;
+	return (qwValidFrom < qwNow && qwNow < qwValidTo);
 }
