@@ -15,7 +15,10 @@ private:
 	/* Controller components */
 	std::vector<ComputerCertificate> Certificates{};
 	std::wstring CmdlineModifyPath{};
-	const DWORD InitDialog();
+	const DWORD InitDialog() noexcept;
+	void EnableDialogItem(const int DialogItem, const bool Enable = true) const noexcept { EnableWindow(GetDlgItem(DialogHandle, DialogItem), Enable); };
+	void DisplayCertificateList() noexcept;
+	void DisplayCertificate();
 
 public:
 	MainDialog(HINSTANCE Instance);
