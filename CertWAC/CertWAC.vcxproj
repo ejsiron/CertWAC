@@ -173,6 +173,7 @@
     <ClInclude Include="InstallInfo.h" />
     <ClInclude Include="MainDialog.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="StringUtility.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CertWAC.rc" />
@@ -184,6 +185,7 @@
     <ClCompile Include="InstallInfo.cpp" />
     <ClCompile Include="ErrorRecord.cpp" />
     <ClCompile Include="MainDialog.cpp" />
+    <ClCompile Include="StringUtility.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

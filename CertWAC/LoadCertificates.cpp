@@ -39,13 +39,14 @@ static std::wstring GetNameFromCertificate(PCCERT_CONTEXT pCertContext, CertName
 	}
 
 	DWORD NameSize{ 0 };
-	std::wstring CertName{ 0 };
-	while (CertName[0] == 0)
+	std::wstring CertName{};
+	NameSize = CertNameToStr(pCertContext->dwCertEncodingType, DesiredName,
+		CERT_X500_NAME_STR | CERT_NAME_STR_REVERSE_FLAG, NULL, NameSize);
+	if (NameSize)
 	{
-		NameSize = CertNameToStr(pCertContext->dwCertEncodingType, DesiredName,
-			CERT_OID_NAME_STR, CertName.data(), NameSize);
-		if (CertName.size() < NameSize)
-			CertName.reserve(NameSize);
+		CertName.resize(NameSize);
+		CertNameToStr(pCertContext->dwCertEncodingType, DesiredName,
+			CERT_X500_NAME_STR | CERT_NAME_STR_REVERSE_FLAG, CertName.data(), NameSize);
 	}
 	return CertName;
 }
@@ -67,10 +68,10 @@ std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates
 	while (pCertContext = CertEnumCertificatesInStore(ComputerStore(), pCertContext))
 	{
 		ComputerCertificate ThisCert{};
-		ThisCert.SubjectName = GetNameFromCertificate(pCertContext, CertNames::Subject);
-		ThisCert.Issuer = GetNameFromCertificate(pCertContext, CertNames::Issuer);
-		ThisCert.ValidFrom = pCertContext->pCertInfo->NotBefore;
-		ThisCert.ValidTo = pCertContext->pCertInfo->NotAfter;
+		ThisCert.SubjectName(GetNameFromCertificate(pCertContext, CertNames::Subject));
+		ThisCert.Issuer(GetNameFromCertificate(pCertContext, CertNames::Issuer));
+		ThisCert.ValidFrom(pCertContext->pCertInfo->NotBefore);
+		ThisCert.ValidTo(pCertContext->pCertInfo->NotAfter);
 
 		// Enhanced Key Usage
 		DWORD EnhancedKeyUsageSize{ 0 };
@@ -83,7 +84,7 @@ std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates
 				{
 					if (std::string{ ServerAuthenticationOID } == std::string{ pKeyEnhancedKeyUsage->rgpszUsageIdentifier[i] })
 					{
-						ThisCert.ServerAuthentication = true;
+						ThisCert.EKUServerAuthentication(true);
 					}
 				}
 
@@ -97,6 +98,7 @@ std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates
 		PCERT_ALT_NAME_ENTRY pAlternateNameEntry = nullptr;
 
 		std::string ExtensionOID{};
+		std::vector<std::wstring> AlternateNames{};
 		for (auto i{ 0 }; i != pCertContext->pCertInfo->cExtension; ++i)
 		{
 			Extension = &pCertContext->pCertInfo->rgExtension[i];
@@ -108,16 +110,17 @@ std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates
 					Extension->Value.pbData, Extension->Value.cbData, NULL, &DataSize))
 				{
 					std::wstring AlternateName{};
-					AlternateName.reserve(DataSize);
+					AlternateName.resize(DataSize);
 					if (CryptFormatObject(pCertContext->dwCertEncodingType, 0, 0, NULL, szOID_SUBJECT_ALT_NAME2,
 						Extension->Value.pbData, Extension->Value.cbData,
 						(void*)AlternateName.data(), &DataSize))
 					{
-						ThisCert.SubjectAlternateNames.emplace_back(AlternateName);
+						AlternateNames.emplace_back(std::move(AlternateName));
 					}
 				}
 			}
 		}
+		ThisCert.SubjectAlternateNames(AlternateNames);
 
 		// thumbprint
 		DWORD CertSHA1HashSize{ 0 };
@@ -135,7 +138,7 @@ std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates
 				{
 					HashStream << std::setw(2) << std::setfill(L'0') << HashByte;
 				}
-				ThisCert.Thumbprint.assign(HashStream.str());
+				ThisCert.Thumbprint(HashStream.str());
 			}
 		}
 		
@@ -146,14 +149,14 @@ std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates
 		BOOL MustFree{ FALSE };
 		if (CryptAcquireCertificatePrivateKey(pCertContext, CRYPT_ACQUIRE_SILENT_FLAG | CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG, NULL, &PrivateKeyHandle, &KeySpec, &MustFree))
 		{
-			ThisCert.PrivateKey = true;
+			ThisCert.HasPrivateKey(true);
 			if (MustFree)
 			{
 				if (KeySpec == CERT_NCRYPT_KEY_SPEC) { NCryptFreeObject(PrivateKeyHandle); }
 				else { CryptReleaseContext(PrivateKeyHandle, 0); }
 			}
 		}
-		Certificates.emplace_back(ThisCert);
+		Certificates.emplace_back(std::move(ThisCert));
 	}
 	if (pCertContext != nullptr)
 		CertFreeCertificateContext(pCertContext);

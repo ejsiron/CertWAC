@@ -80,7 +80,7 @@ void MainDialog::DisplayCertificateList() noexcept
 	{
 		for (auto const& Certificate : Certificates)
 		{
-			SendMessage(CertList, CB_ADDSTRING, 0, (LPARAM)Certificate.GetSubjectName().c_str());
+			SendMessage(CertList, CB_ADDSTRING, 0, (LPARAM)Certificate.FQDNFromSimpleRDN(Certificate.SubjectName()).c_str());
 		}
 		RECT CertListComboSize{ 0 };
 		GetWindowRect(CertList, &CertListComboSize);
@@ -101,19 +101,19 @@ void MainDialog::DisplayCertificate()
 	{
 		ComputerCertificate& Certificate{ Certificates.at(SendMessage(CertList, CB_GETCURSEL, 0, 0)) };
 		std::wstringstream CertificateDisplay{};
-		CertificateDisplay << L"Subject: " << Certificate.GetSubjectName() << L"\r\n";
-		CertificateDisplay << L"Issuer: " << Certificate.GetIssuer() << L"\r\n";
-		CertificateDisplay << L"Subject Alternate Names:\r\n";
-		if (Certificate.GetSubjectAlternateNames().size())
+		CertificateDisplay << L"Subject: " << Certificate.SubjectName() << L"\r\n";
+		CertificateDisplay << L"Issuer: " << Certificate.Issuer() << L"\r\n";
+		if (Certificate.SubjectAlternateNames().size())
 		{
-			for (auto const& AlternateName : Certificate.GetSubjectAlternateNames())
+			CertificateDisplay << L"Subject Alternate Names:\r\n";
+			for (auto const& AlternateName : Certificate.SubjectAlternateNames())
 			{
-				CertificateDisplay << AlternateName << "\r\n";
+				CertificateDisplay << L'\t' << AlternateName << "\r\n";
 			}
 		}
-		CertificateDisplay << L"Valid from: " << Certificate.GetValidFrom() << L"\r\n";
-		CertificateDisplay << L"Valid to: " << Certificate.GetValidTo() << L"\r\n";
-		CertificateDisplay << L"Thumbprint: " << Certificate.GetThumbprint() << L"\r\n";
+		CertificateDisplay << L"Valid from: " << Certificate.ValidFrom() << L"\r\n";
+		CertificateDisplay << L"Valid to: " << Certificate.ValidTo() << L"\r\n";
+		CertificateDisplay << L"Thumbprint: " << Certificate.Thumbprint() << L"\r\n";
 		CertificateDisplay.flush();
 		CertificateText = CertificateDisplay.str();
 	}
