@@ -11,19 +11,18 @@ static std::wstring FormatErrorForPopup(const DWORD ErrorCode, const std::wstrin
 
 INT_PTR CALLBACK MainDialog::SharedDialogProc(HWND hDialog, UINT uMessage, WPARAM wParam, LPARAM lParam)
 {
-	SetLastError(ERROR_SUCCESS);
-	MainDialog* AppDialog{ uMessage == WM_INITDIALOG ?
-		(MainDialog*)lParam : (MainDialog*)GetWindowLongPtr(hDialog, GWL_USERDATA) };
-	if (auto LastError = GetLastError() || !lParam)
+	MainDialog* AppDialog{ nullptr };
+	if (uMessage == WM_INITDIALOG)
 	{
-		LastError = LastError ? LastError : ERROR_INVALID_DATA;
-		MessageBox(hDialog,
-			FormatErrorForPopup(LastError, ErrorRecord::GetErrorMessage(LastError), L"Loading application data").c_str(),
-			L"Processing Error", MB_ICONERROR);
-		PostQuitMessage(ERROR_INVALID_DATA);
-		return FALSE;
+		AppDialog = (MainDialog*)lParam;
+		AppDialog->DialogHandle = hDialog;
 	}
-	return AppDialog->ThisDialogProc(uMessage, wParam, lParam);
+	else
+		AppDialog = (MainDialog*)GetWindowLongPtr(hDialog, GWL_USERDATA);
+
+	if(AppDialog)
+		return AppDialog->ThisDialogProc(uMessage, wParam, lParam);
+	return FALSE;
 }
 
 INT_PTR CALLBACK MainDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM lParam)
@@ -50,8 +49,8 @@ INT_PTR CALLBACK MainDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM
 			MessageBox(DialogHandle, FormatErrorForPopup(LastError, ErrorRecord::GetErrorMessage(LastError).c_str(), L"Setting application information").c_str(), L"Startup Error", MB_OK);
 		}
 		auto InitResult = InitDialog();
-		if (InitResult != ERROR_SUCCESS)
-			PostQuitMessage(InitResult);
+		//if (InitResult != ERROR_SUCCESS)
+		//	PostQuitMessage(InitResult);
 	}
 	break;
 	case WM_CLOSE:
