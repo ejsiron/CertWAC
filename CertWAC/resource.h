@@ -3,9 +3,8 @@
 // Used by CertWAC.rc
 //
 #define IDD_MAIN                        101
-#define IDB_TINYGREENBOX                103
-#define IDB_BITMAP1                     104
-#define IDB_TINYREDBOX                  104
+#define IDB_TINYGREENBOX                102
+#define IDB_TINYREDBOX                  103
 #define IDC_CERTPROMPT                  1001
 #define IDC_CERTLIST                    1002
 #define IDC_REFRESH                     1003
@@ -24,7 +23,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        105
+#define _APS_NEXT_RESOURCE_VALUE        104
 #define _APS_NEXT_COMMAND_VALUE         40001
 #define _APS_NEXT_CONTROL_VALUE         1012
 #define _APS_NEXT_SYMED_VALUE           101

@@ -63,10 +63,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\Source\Images\TinyGreenBox.bmp">
+    <Image Include="Resources\TinyGreenBox.bmp">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="..\..\..\Source\Images\TinyRedBox.bmp">
+    <Image Include="Resources\TinyRedBox.bmp">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
