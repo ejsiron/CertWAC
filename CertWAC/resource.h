@@ -18,6 +18,8 @@
 #define IDC_RADIOSIMPLEPROGRESS         1011
 #define IDC_RADIOEXTENDEDPROGRESS       1012
 #define IDC_RADIONOPROGRESS             1013
+#define IDC_EDIT1                       1014
+#define IDC_PORT                        1014
 
 // Next default values for new objects
 // 
@@ -25,7 +27,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        104
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1012
+#define _APS_NEXT_CONTROL_VALUE         1015
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
