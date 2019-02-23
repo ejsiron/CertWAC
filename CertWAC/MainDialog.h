@@ -11,14 +11,18 @@ private:
 	HWND DialogHandle{ 0 };
 	static INT_PTR CALLBACK SharedDialogProc(HWND hDialog, UINT uMessage, WPARAM wParam, LPARAM lParam);
 	INT_PTR CALLBACK ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM lParam);
+	HBITMAP TinyGreenBox{ 0 };
+	HBITMAP TinyRedBox{ 0 };
 
 	/* Controller components */
+	const DWORD DetectWACInstallation();
 	std::vector<ComputerCertificate> Certificates{};
 	std::wstring CmdlineModifyPath{};
 	const DWORD InitDialog() noexcept;
 	void EnableDialogItem(const int DialogItem, const bool Enable = true) const noexcept { EnableWindow(GetDlgItem(DialogHandle, DialogItem), Enable); };
 	void DisplayCertificateList() noexcept;
 	void DisplayCertificate();
+	void SetPictureBoxImage(const INT PictureBoxID, const bool Good = true);
 
 public:
 	MainDialog(HINSTANCE Instance);

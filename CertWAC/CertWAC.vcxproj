@@ -187,6 +187,10 @@
     <ClCompile Include="MainDialog.cpp" />
     <ClCompile Include="StringUtility.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\Source\Images\TinyGreenBox.bmp" />
+    <Image Include="..\..\..\Source\Images\TinyRedBox.bmp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

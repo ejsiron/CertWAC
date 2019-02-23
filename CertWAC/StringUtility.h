@@ -10,6 +10,10 @@ std::wstring JoinString(const std::wstring& Glue, const std::vector<std::wstring
 template <class T>
 std::wstring JoinString(const T Glue, const std::vector<std::wstring>& Parts) { return JoinString(std::wstring{ Glue }, Parts); }
 
-std::vector<std::wstring> SplitString(const std::wstring& Glue, const std::wstring& Composite);
+// Splits a string, using a regex match against GluePattern
+// * only YOU can prevent ill-formed regex patterns
+std::vector<std::wstring> SplitString(const std::wstring& GluePattern, const std::wstring& Composite);
+// Splits a string, using a regex match against GluePattern
+// * only YOU can prevent ill-formed regex patterns
 template <class T>
-std::wstring JoinString(const T Glue, const std::wstring& Composite) { return SplitString(std::wstring(Glue), Composite); }
+std::vector<std::wstring> SplitString(const T GluePattern, const std::wstring& Composite) { return SplitString(std::wstring(GluePattern), Composite); }
