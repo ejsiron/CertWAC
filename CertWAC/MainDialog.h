@@ -9,15 +9,17 @@ private:
 	/* Windows components */
 	HINSTANCE AppInstance{ 0 };
 	HWND DialogHandle{ 0 };
+	HICON AppIcon{ 0 };
 	static INT_PTR CALLBACK SharedDialogProc(HWND hDialog, UINT uMessage, WPARAM wParam, LPARAM lParam);
 	INT_PTR CALLBACK ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM lParam);
 	HBITMAP TinyGreenBox{ 0 };
 	HBITMAP TinyRedBox{ 0 };
 
 	/* Controller components */
-	const DWORD DetectWACInstallation();
 	std::vector<ComputerCertificate> Certificates{};
+	int ListeningPort;
 	std::wstring CmdlineModifyPath{};
+	const DWORD GetWACInstallationInfo();
 	const DWORD InitDialog() noexcept;
 	void EnableDialogItem(const int DialogItem, const bool Enable = true) const noexcept { EnableWindow(GetDlgItem(DialogHandle, DialogItem), Enable); };
 	void DisplayCertificateList() noexcept;

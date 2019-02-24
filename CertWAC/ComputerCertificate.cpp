@@ -58,7 +58,7 @@ const bool ComputerCertificate::IsWithinValidityPeriod() const noexcept
 	GetSystemTime(&NowSystemTime);
 	FILETIME NowFileTime{ 0 };
 	SystemTimeToFileTime(&NowSystemTime, &NowFileTime);
-	ULONGLONG qwNow{ (((ULONGLONG)validfrom.dwHighDateTime) << 32) + validfrom.dwLowDateTime };
+	ULONGLONG qwNow{ (((ULONGLONG)NowFileTime.dwHighDateTime) << 32) + NowFileTime.dwLowDateTime };
 	ULONGLONG qwValidFrom{ (((ULONGLONG)validfrom.dwHighDateTime) << 32) + validfrom.dwLowDateTime };
 	ULONGLONG qwValidTo{ (((ULONGLONG)validto.dwHighDateTime) << 32) + validto.dwLowDateTime };
 	return (qwValidFrom < qwNow && qwNow < qwValidTo);

@@ -66,11 +66,12 @@ INT_PTR CALLBACK MainDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM
 				DisplayCertificate();
 			break;
 		case IDC_REFRESH:
+			GetWACInstallationInfo();
 			DisplayCertificateList();
-			DetectWACInstallation();
 			break;
 		}
 		break;
+	break;
 	case WM_INITDIALOG:
 	{
 		SetLastError(ERROR_SUCCESS);
@@ -84,7 +85,6 @@ INT_PTR CALLBACK MainDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM
 		{
 			auto InitResult = InitDialog();
 			SetPictureBoxImage(IDC_ICONWACINSTALLED, InitResult == ERROR_SUCCESS);
-			SendMessage(GetDlgItem(DialogHandle, IDC_RADIOSIMPLEPROGRESS), BM_SETCHECK, BST_CHECKED, NULL);
 			DisplayCertificateList();
 		}
 	}
@@ -101,11 +101,13 @@ INT_PTR CALLBACK MainDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM
 	return FALSE;
 }
 
-const DWORD MainDialog::DetectWACInstallation()
+const DWORD MainDialog::GetWACInstallationInfo()
 {
-	auto[RegistryError, ModifyPath] = GetMSIModifyPath();
+	auto[RegistryError, ModifyPath, Port] = GetWACInstallInfo();
 	auto ErrorCode = RegistryError.GetErrorCode();
 	CmdlineModifyPath = ModifyPath;
+	ListeningPort = Port;
+	SetDlgItemText(DialogHandle, IDC_PORT, std::to_wstring(ListeningPort).c_str());
 	return ErrorCode;
 }
 
@@ -137,10 +139,10 @@ void MainDialog::DisplayCertificateList() noexcept
 void MainDialog::DisplayCertificate()
 {
 	std::wstring CertificateText{};
-	bool WACDetected{ CmdlineModifyPath.size() > 0 };
-	bool CertValid{ false };
-	bool ServerAuth{ false };
-	bool PrivateKey{ false };
+	bool StatusGreenWACDetection{ CmdlineModifyPath.size() > 0 };
+	bool StatusGreenCertificateValid{ false };
+	bool StatusGreenServerAuth{ false };
+	bool StatusGreenPrivateKey{ false };
 
 	HWND CertList{ GetDlgItem(DialogHandle, IDC_CERTLIST) };
 	if (IsWindowEnabled(CertList) && Certificates.size())
@@ -155,12 +157,13 @@ void MainDialog::DisplayCertificate()
 		CertificateDisplay << L"Thumbprint: " << Certificate.Thumbprint();
 		CertificateDisplay.flush();
 		CertificateText = CertificateDisplay.str();
-		SetPictureBoxImage(IDC_ICONCERTVALID, (CertValid = Certificate.IsWithinValidityPeriod()));
-		SetPictureBoxImage(IDC_ICONSERVAUTHALLOWED, (ServerAuth = Certificate.EKUServerAuthentication()));
-		SetPictureBoxImage(IDC_ICONHASPRIVATEKEY, (PrivateKey = Certificate.HasPrivateKey()));
+		SetPictureBoxImage(IDC_ICONCERTVALID, (StatusGreenCertificateValid = Certificate.IsWithinValidityPeriod()));
+		SetPictureBoxImage(IDC_ICONSERVAUTHALLOWED, (StatusGreenServerAuth = Certificate.EKUServerAuthentication()));
+		SetPictureBoxImage(IDC_ICONHASPRIVATEKEY, (StatusGreenPrivateKey = Certificate.HasPrivateKey()));
 	}
 	SetDlgItemText(DialogHandle, IDC_CERTDETAILS, CertificateText.c_str());
-	EnableDialogItem(IDOK, WACDetected && CertValid && ServerAuth && PrivateKey);
+	EnableDialogItem(IDOK, StatusGreenWACDetection && StatusGreenCertificateValid &&
+		StatusGreenServerAuth && StatusGreenPrivateKey);
 }
 
 void MainDialog::SetPictureBoxImage(const INT PictureBoxID, const bool Good)
@@ -172,19 +175,21 @@ void MainDialog::SetPictureBoxImage(const INT PictureBoxID, const bool Good)
 const DWORD MainDialog::InitDialog() noexcept
 {
 	HINSTANCE Instance{ GetModuleHandle(NULL) };
-	TinyGreenBox = (HBITMAP)LoadImage(Instance, MAKEINTRESOURCE(IDB_TINYGREENBOX), IMAGE_BITMAP, 12, 12, LR_DEFAULTCOLOR);
-	TinyRedBox = (HBITMAP)LoadImage(Instance, MAKEINTRESOURCE(IDB_TINYREDBOX), IMAGE_BITMAP, 12, 12, LR_DEFAULTCOLOR);
+	AppIcon = LoadIcon(Instance, MAKEINTRESOURCE(IDI_CERTWAC));
+	TinyGreenBox = LoadBitmap(Instance, MAKEINTRESOURCE(IDB_TINYGREENBOX));
+	TinyRedBox = LoadBitmap(Instance, MAKEINTRESOURCE(IDB_TINYREDBOX));
+	SendMessage(DialogHandle, WM_SETICON, ICON_SMALL, (LPARAM)AppIcon);
 	SetPictureBoxImage(IDC_ICONWACINSTALLED, false);
 	SetPictureBoxImage(IDC_ICONCERTVALID, false);
 	SetPictureBoxImage(IDC_ICONSERVAUTHALLOWED, false);
 	SetPictureBoxImage(IDC_ICONHASPRIVATEKEY, false);
-	auto ErrorCode = DetectWACInstallation();
+	auto[CertLoadError, CertificateList] = GetComputerCertificates();
+	Certificates = CertificateList;
+	auto ErrorCode = GetWACInstallationInfo();
 	return ErrorCode;
 }
 
 MainDialog::MainDialog(HINSTANCE Instance) : AppInstance(Instance)
 {
-	auto[CertLoadError, CertificateList] = GetComputerCertificates();
-	Certificates = CertificateList;
 	DialogHandle = CreateDialogParam(AppInstance, MAKEINTRESOURCE(IDD_MAIN), 0, &SharedDialogProc, (LPARAM)this);
 }

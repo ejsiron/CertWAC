@@ -188,6 +188,7 @@
     <ClCompile Include="StringUtility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="Resources\CertWAC.ico" />
     <Image Include="Resources\TinyGreenBox.bmp" />
     <Image Include="Resources\TinyRedBox.bmp" />
   </ItemGroup>

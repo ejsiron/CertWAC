@@ -69,5 +69,8 @@
     <Image Include="Resources\TinyRedBox.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="Resources\CertWAC.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>
