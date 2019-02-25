@@ -170,16 +170,20 @@
   <ItemGroup>
     <ClInclude Include="ErrorRecord.h" />
     <ClInclude Include="ComputerCertificate.h" />
+    <ClInclude Include="Action.h" />
     <ClInclude Include="InstallInfo.h" />
     <ClInclude Include="MainDialog.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="ActionDialog.h" />
     <ClInclude Include="StringUtility.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CertWAC.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ActionDialog.cpp" />
     <ClCompile Include="ComputerCertificate.cpp" />
+    <ClCompile Include="Action.cpp" />
     <ClCompile Include="LoadCertificates.cpp" />
     <ClCompile Include="CertWAC.cpp" />
     <ClCompile Include="InstallInfo.cpp" />

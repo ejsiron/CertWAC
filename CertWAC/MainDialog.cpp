@@ -1,5 +1,7 @@
+#include <map>
 #include <sstream>
 #include <string>
+#include "ActionDialog.h"
 #include "ComputerCertificate.h"
 #include "ErrorRecord.h"
 #include "InstallInfo.h"
@@ -38,7 +40,7 @@ INT_PTR CALLBACK MainDialog::SharedDialogProc(HWND hDialog, UINT uMessage, WPARA
 	if (uMessage == WM_INITDIALOG)
 	{
 		AppDialog = (MainDialog*)lParam;
-		AppDialog->DialogHandle = hDialog;
+		AppDialog->HandleDialogMain = hDialog;
 	}
 	else
 		AppDialog = (MainDialog*)GetWindowLongPtr(hDialog, GWL_USERDATA);
@@ -56,10 +58,10 @@ INT_PTR CALLBACK MainDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM
 		switch (LOWORD(wParam))
 		{
 		case IDOK:
-			GetComputerCertificates();
+			StartActions();
 			return TRUE;
 		case IDCANCEL:
-			SendMessage(DialogHandle, WM_CLOSE, 0, 0);
+			SendMessage(HandleDialogMain, WM_CLOSE, 0, 0);
 			return TRUE;
 		case IDC_CERTLIST:
 			if (HIWORD(wParam) == CBN_SELCHANGE)
@@ -71,14 +73,14 @@ INT_PTR CALLBACK MainDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM
 			break;
 		}
 		break;
-	break;
+		break;
 	case WM_INITDIALOG:
 	{
 		SetLastError(ERROR_SUCCESS);
-		SetWindowLongPtr(DialogHandle, GWL_USERDATA, (LONG_PTR)this);
+		SetWindowLongPtr(HandleDialogMain, GWL_USERDATA, (LONG_PTR)this);
 		if (auto LastError = GetLastError())
 		{
-			MessageBox(DialogHandle, FormatErrorForPopup(LastError, ErrorRecord::GetErrorMessage(LastError).c_str(), L"Setting application information").c_str(), L"Startup Error", MB_OK);
+			MessageBox(HandleDialogMain, FormatErrorForPopup(LastError, ErrorRecord::GetErrorMessage(LastError).c_str(), L"Setting application information").c_str(), L"Startup Error", MB_OK);
 			PostQuitMessage(LastError);
 		}
 		else
@@ -90,7 +92,7 @@ INT_PTR CALLBACK MainDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM
 	}
 	break;
 	case WM_CLOSE:
-		DestroyWindow(DialogHandle);
+		DestroyWindow(HandleDialogMain);
 		DeleteObject(TinyGreenBox);
 		DeleteObject(TinyRedBox);
 		return TRUE;
@@ -107,7 +109,7 @@ const DWORD MainDialog::GetWACInstallationInfo()
 	auto ErrorCode = RegistryError.GetErrorCode();
 	CmdlineModifyPath = ModifyPath;
 	ListeningPort = Port;
-	SetDlgItemText(DialogHandle, IDC_PORT, std::to_wstring(ListeningPort).c_str());
+	SetDlgItemText(HandleDialogMain, IDC_PORT, std::to_wstring(ListeningPort).c_str());
 	return ErrorCode;
 }
 
@@ -115,7 +117,7 @@ void MainDialog::DisplayCertificateList() noexcept
 {
 	EnableDialogItem(IDC_CERTLIST, false);
 	size_t ItemCount{ Certificates.size() };
-	HWND CertList{ GetDlgItem(DialogHandle, IDC_CERTLIST) };
+	HWND CertList{ GetDlgItem(HandleDialogMain, IDC_CERTLIST) };
 	SendMessage(CertList, CB_RESETCONTENT, 0, 0);
 
 	if (ItemCount)
@@ -144,32 +146,49 @@ void MainDialog::DisplayCertificate()
 	bool StatusGreenServerAuth{ false };
 	bool StatusGreenPrivateKey{ false };
 
-	HWND CertList{ GetDlgItem(DialogHandle, IDC_CERTLIST) };
+	HWND CertList{ GetDlgItem(HandleDialogMain, IDC_CERTLIST) };
 	if (IsWindowEnabled(CertList) && Certificates.size())
 	{
 		ComputerCertificate& Certificate{ Certificates.at(SendMessage(CertList, CB_GETCURSEL, 0, 0)) };
+		Thumbprint = Certificate.Thumbprint();
 		std::wstringstream CertificateDisplay{};
 		CertificateDisplay << L"Subject:" << SplitForOutput(L", ?", Certificate.SubjectName());
 		CertificateDisplay << L"Issuer: " << SplitForOutput(L", ?", Certificate.Issuer());
 		CertificateDisplay << L"Subject Alternate Names:" << SplitForOutput(Certificate.SubjectAlternateNames());
 		CertificateDisplay << L"Valid from: " << Certificate.ValidFrom() << L"\r\n";
 		CertificateDisplay << L"Valid to: " << Certificate.ValidTo() << L"\r\n";
-		CertificateDisplay << L"Thumbprint: " << Certificate.Thumbprint();
-		CertificateDisplay.flush();
+		CertificateDisplay << L"Thumbprint: " << Thumbprint;
 		CertificateText = CertificateDisplay.str();
 		SetPictureBoxImage(IDC_ICONCERTVALID, (StatusGreenCertificateValid = Certificate.IsWithinValidityPeriod()));
 		SetPictureBoxImage(IDC_ICONSERVAUTHALLOWED, (StatusGreenServerAuth = Certificate.EKUServerAuthentication()));
 		SetPictureBoxImage(IDC_ICONHASPRIVATEKEY, (StatusGreenPrivateKey = Certificate.HasPrivateKey()));
 	}
-	SetDlgItemText(DialogHandle, IDC_CERTDETAILS, CertificateText.c_str());
+	SetDlgItemText(HandleDialogMain, IDC_CERTDETAILS, CertificateText.c_str());
 	EnableDialogItem(IDOK, StatusGreenWACDetection && StatusGreenCertificateValid &&
 		StatusGreenServerAuth && StatusGreenPrivateKey);
+	EnableDialogItem(IDOK, true);
 }
 
 void MainDialog::SetPictureBoxImage(const INT PictureBoxID, const bool Good)
 {
 	HBITMAP SelectedImage = Good ? TinyGreenBox : TinyRedBox;
-	SendDlgItemMessage(DialogHandle, PictureBoxID, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)SelectedImage);
+	SendDlgItemMessage(HandleDialogMain, PictureBoxID, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)SelectedImage);
+}
+
+static std::pair<std::wstring, std::wstring> BuildMsiCommandSet(std::wstring RegistryPath, std::wstring Thumbprint)
+{
+	const std::wstring MSIMiddle{ L" /qb SSL_CERTIFICATE_OPTION=installed SME_THUMBPRINT=" };
+	std::vector<std::wstring> MsiSet{ SplitString(L" ", RegistryPath) };
+	return std::make_pair(MsiSet[0], (MsiSet[0] + MSIMiddle + Thumbprint));
+}
+
+void MainDialog::StartActions()
+{
+	std::vector<std::tuple<std::wstring, std::wstring, std::wstring>> Actions;
+	auto [MsiCmd, MsiParams] {BuildMsiCommandSet(CmdlineModifyPath, Thumbprint)};
+	Actions.emplace_back(std::tuple(L"Running installer", MsiCmd, MsiParams));
+	Actions.emplace_back(std::tuple(L"Starting service", L"sc", L"start ServerManagementGateway"));
+	ActionDialog ActionWindow(AppInstance, HandleDialogMain, Actions);
 }
 
 const DWORD MainDialog::InitDialog() noexcept
@@ -178,7 +197,7 @@ const DWORD MainDialog::InitDialog() noexcept
 	AppIcon = LoadIcon(Instance, MAKEINTRESOURCE(IDI_CERTWAC));
 	TinyGreenBox = LoadBitmap(Instance, MAKEINTRESOURCE(IDB_TINYGREENBOX));
 	TinyRedBox = LoadBitmap(Instance, MAKEINTRESOURCE(IDB_TINYREDBOX));
-	SendMessage(DialogHandle, WM_SETICON, ICON_SMALL, (LPARAM)AppIcon);
+	SendMessage(HandleDialogMain, WM_SETICON, ICON_SMALL, (LPARAM)AppIcon);
 	SetPictureBoxImage(IDC_ICONWACINSTALLED, false);
 	SetPictureBoxImage(IDC_ICONCERTVALID, false);
 	SetPictureBoxImage(IDC_ICONSERVAUTHALLOWED, false);
@@ -191,5 +210,5 @@ const DWORD MainDialog::InitDialog() noexcept
 
 MainDialog::MainDialog(HINSTANCE Instance) : AppInstance(Instance)
 {
-	DialogHandle = CreateDialogParam(AppInstance, MAKEINTRESOURCE(IDD_MAIN), 0, &SharedDialogProc, (LPARAM)this);
+	HandleDialogMain = CreateDialogParam(AppInstance, MAKEINTRESOURCE(IDD_MAIN), 0, &SharedDialogProc, (LPARAM)this);
 }

@@ -8,7 +8,7 @@ class MainDialog
 private:
 	/* Windows components */
 	HINSTANCE AppInstance{ 0 };
-	HWND DialogHandle{ 0 };
+	HWND HandleDialogMain{ 0 };
 	HICON AppIcon{ 0 };
 	static INT_PTR CALLBACK SharedDialogProc(HWND hDialog, UINT uMessage, WPARAM wParam, LPARAM lParam);
 	INT_PTR CALLBACK ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM lParam);
@@ -19,12 +19,14 @@ private:
 	std::vector<ComputerCertificate> Certificates{};
 	int ListeningPort;
 	std::wstring CmdlineModifyPath{};
+	std::wstring Thumbprint{};
 	const DWORD GetWACInstallationInfo();
 	const DWORD InitDialog() noexcept;
-	void EnableDialogItem(const int DialogItem, const bool Enable = true) const noexcept { EnableWindow(GetDlgItem(DialogHandle, DialogItem), Enable); };
+	void EnableDialogItem(const int DialogItem, const bool Enable = true) const noexcept { EnableWindow(GetDlgItem(HandleDialogMain, DialogItem), Enable); };
 	void DisplayCertificateList() noexcept;
 	void DisplayCertificate();
 	void SetPictureBoxImage(const INT PictureBoxID, const bool Good = true);
+	void StartActions();
 
 public:
 	MainDialog(HINSTANCE Instance);
@@ -32,7 +34,7 @@ public:
 	MainDialog& operator=(const MainDialog&) = delete;
 	MainDialog(MainDialog&&) = default;
 	MainDialog& operator=(MainDialog&&) = default;
-	void Show(int ShowCommand) const noexcept { ShowWindow(DialogHandle, ShowCommand); }
-	const HWND GetWindowHandle() const noexcept { return DialogHandle; }
+	void Show(int ShowCommand) const noexcept { ShowWindow(HandleDialogMain, ShowCommand); }
+	const HWND GetWindowHandle() const noexcept { return HandleDialogMain; }
 	void AssignModifyPath(const std::wstring& NewPath) { CmdlineModifyPath = NewPath; }
 };
