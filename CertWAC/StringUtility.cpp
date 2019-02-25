@@ -14,6 +14,7 @@ std::wstring CleanWindowsString(const std::wstring& WindowsString)
 
 std::wstring JoinString(const std::wstring& Glue, const std::vector<std::wstring>& Parts)
 {
+	// strings in this app are few and small; needs modification for JoinedString.resize() pre-calculation and allocation error handling before using in general-purpose code
 	std::wstring JoinedString{};
 	if (Parts.size())
 	{

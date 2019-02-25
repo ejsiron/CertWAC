@@ -6,6 +6,7 @@
 // -- does not remove nulls from middle of a string (ex: registry REG_MULTI_SZ)
 std::wstring CleanWindowsString(const std::wstring& WindowsString);
 
+// Combines a vector of strings into a single string, separated by Glue
 std::wstring JoinString(const std::wstring& Glue, const std::vector<std::wstring>& Parts);
 template <class T>
 std::wstring JoinString(const T Glue, const std::vector<std::wstring>& Parts) { return JoinString(std::wstring{ Glue }, Parts); }

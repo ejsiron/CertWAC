@@ -4,8 +4,8 @@
 #include <vector>
 #include "ErrorRecord.h"
 
-constexpr size_t SHA1_BYTE_LENGTH{ 20 };
-
+// represents a PKI certificate from the local Windows certificate store
+// only exposes portions germane to this application
 class ComputerCertificate
 {
 private:
@@ -36,12 +36,12 @@ public:
 	const std::wstring ValidTo() const noexcept;
 	void SubjectAlternateNames(const std::vector<std::wstring>& NewSubjectAlternateNames);
 	const std::vector<std::wstring>& SubjectAlternateNames() const noexcept { return subjectalternatenames; }
-	void EKUServerAuthentication(const bool HasServerAuthenticationEKU) noexcept { serverauthentication = HasServerAuthenticationEKU; }
-	const bool EKUServerAuthentication() const noexcept { return serverauthentication; }
+	void HasServerAuthentication(const bool HasServerAuthenticationEKU) noexcept { serverauthentication = HasServerAuthenticationEKU; }
+	const bool HasServerAuthentication() const noexcept { return serverauthentication; }
 	void HasPrivateKey(const bool PrivateKeyExists) { privatekey = PrivateKeyExists; }
 	const bool HasPrivateKey() const noexcept { return privatekey; }
 	const bool IsWithinValidityPeriod() const noexcept;
 	static std::wstring FQDNFromSimpleRDN(const std::wstring& RDN);
 };
 
-std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates() noexcept;
+std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates();

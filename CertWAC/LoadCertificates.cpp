@@ -25,7 +25,7 @@ enum class CertNames
 	Issuer
 };
 
-static std::wstring GetNameFromCertificate(PCCERT_CONTEXT pCertContext, CertNames DesiredCertName) noexcept
+static std::wstring GetNameFromCertificate(PCCERT_CONTEXT pCertContext, CertNames DesiredCertName)
 {
 	PCERT_NAME_BLOB DesiredName;
 	switch (DesiredCertName)
@@ -51,7 +51,7 @@ static std::wstring GetNameFromCertificate(PCCERT_CONTEXT pCertContext, CertName
 	return CertName;
 }
 
-std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates() noexcept
+std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates()
 {
 	const wchar_t* StoreName{ L"MY" };
 	std::vector<ComputerCertificate> Certificates{};
@@ -77,19 +77,19 @@ std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates
 		DWORD EnhancedKeyUsageSize{ 0 };
 		if (CertGetEnhancedKeyUsage(pCertContext, 0, NULL, &EnhancedKeyUsageSize))
 		{
-			PCERT_ENHKEY_USAGE pKeyEnhancedKeyUsage{ (CERT_ENHKEY_USAGE*)(new char[EnhancedKeyUsageSize]) };
-			if (CertGetEnhancedKeyUsage(pCertContext, 0, pKeyEnhancedKeyUsage, &EnhancedKeyUsageSize))
+			std::vector<char> EKU{};
+			EKU.resize(EnhancedKeyUsageSize);
+			if (CertGetEnhancedKeyUsage(pCertContext, 0, (CERT_ENHKEY_USAGE*)EKU.data(), &EnhancedKeyUsageSize))
 			{
-				for (auto i{ 0 }; i != pKeyEnhancedKeyUsage->cUsageIdentifier; ++i)
+				for (auto i{ 0 }; i != ((CERT_ENHKEY_USAGE*)(EKU.data()))->cUsageIdentifier; ++i)
 				{
-					if (std::string{ ServerAuthenticationOID } == std::string{ pKeyEnhancedKeyUsage->rgpszUsageIdentifier[i] })
+					if (std::string{ ServerAuthenticationOID } == std::string{ ((CERT_ENHKEY_USAGE*)(EKU.data()))->rgpszUsageIdentifier[i] })
 					{
-						ThisCert.EKUServerAuthentication(true);
+						ThisCert.HasServerAuthentication(true);
 					}
 				}
 
 			}
-			delete[] pKeyEnhancedKeyUsage;
 		}
 
 		// SAN
@@ -150,11 +150,11 @@ std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates
 		if (CryptAcquireCertificatePrivateKey(pCertContext, CRYPT_ACQUIRE_SILENT_FLAG | CRYPT_ACQUIRE_PREFER_NCRYPT_KEY_FLAG, NULL, &PrivateKeyHandle, &KeySpec, &MustFree))
 		{
 			ThisCert.HasPrivateKey(true);
-			if (MustFree)
-			{
-				if (KeySpec == CERT_NCRYPT_KEY_SPEC) { NCryptFreeObject(PrivateKeyHandle); }
-				else { CryptReleaseContext(PrivateKeyHandle, 0); }
-			}
+		}
+		if (MustFree)
+		{
+			if (KeySpec == CERT_NCRYPT_KEY_SPEC) { NCryptFreeObject(PrivateKeyHandle); }
+			else { CryptReleaseContext(PrivateKeyHandle, 0); }
 		}
 		Certificates.emplace_back(std::move(ThisCert));
 	}

@@ -1,8 +1,7 @@
 #include <thread>
-#include <Windows.h>
 #include "Action.h"
 
-void RunAction(const HWND Owner, const std::wstring& Action, const std::wstring& Params)
+static void RunAction(const HWND Owner, const std::wstring& Action, const std::wstring& Params)
 {
 	SHELLEXECUTEINFO ActionInfo;
 	ActionInfo.cbSize = sizeof(SHELLEXECUTEINFO);

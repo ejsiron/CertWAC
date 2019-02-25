@@ -39,7 +39,7 @@
     <ClInclude Include="Action.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WindowsTarget.h">
+    <ClInclude Include="ErrorDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -64,9 +64,6 @@
     <ClCompile Include="ComputerCertificate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MainDialog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="StringUtility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -74,6 +71,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Action.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ErrorDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainDialogUI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainDialogController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -85,6 +91,9 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="Resources\CertWAC.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\Error.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

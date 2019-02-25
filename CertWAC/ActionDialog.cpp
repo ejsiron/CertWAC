@@ -36,7 +36,7 @@ void ActionDialog::InitiateAction()
 	}
 }
 
-void ActionDialog::CenterInParent()
+void ActionDialog::CenterInParent() noexcept
 { // https://docs.microsoft.com/en-us/windows/desktop/dlgbox/using-dialog-boxes
 	RECT ParentRect, ChildRect, TargetRect;
 	GetWindowRect(HandleDialogMain, &ParentRect);
@@ -72,9 +72,8 @@ INT_PTR CALLBACK ActionDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPAR
 }
 
 ActionDialog::ActionDialog(const HINSTANCE Instance, const HWND Parent, const std::vector<std::tuple<std::wstring, std::wstring, std::wstring>>& Actions)
-	:AppInstance(Instance), DialogActions(Actions)
+	:AppInstance(Instance), HandleDialogMain(Parent), DialogActions(Actions)
 {
-	HandleDialogMain = Parent;
 	DialogBoxParam(Instance, MAKEINTRESOURCE(IDD_ACTIONDIALOG), HandleDialogMain, &SharedDialogProc, (LPARAM)this);
 	PostQuitMessage(0);
 }

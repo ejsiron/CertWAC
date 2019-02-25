@@ -1,5 +1,4 @@
 #include <Windows.h>
-#include <winerror.h>
 #include <optional>
 #include <memory>
 #include "InstallInfo.h"
@@ -11,6 +10,14 @@ const wchar_t* ExpectedWACGUID{ L"{4FAE3A2E-4369-490E-97F3-0B3BFF183AB9}" };
 const wchar_t* ExpectedApplicationName{ L"Windows Admin Center" };
 const wchar_t* AppDisplayNameFieldName{ L"DisplayName" };
 const wchar_t* AppModifyPathFieldName{ L"ModifyPath" };
+
+const wchar_t* ActivityAccessingUninstallRegistry{ L"Accessing uninstall registry branch" };
+const wchar_t* ActivitySearchingForWAC{ L"Accessing expected WAC installation key" };
+const wchar_t* ActivitySearchingForInstallation{ L"Searching for WAC installation key" };
+const wchar_t* ActivityReadingAppModifyKVP{ L"Reading app modify command line" };
+const wchar_t* ActivityAccessingAppRegistry{ L"Accessing application registry branch" };
+const wchar_t* ActivityReadingPortKVP{ L"Reading port value from registry" };
+const wchar_t* ActivitySettingPortKVP{ L"Writing port value to registry" };
 
 constexpr DWORD REG_READ_ACCESS{ KEY_READ | KEY_WOW64_64KEY };
 constexpr DWORD KVPValueLength{ 1024 };
@@ -42,12 +49,12 @@ static std::pair<LSTATUS, std::wstring> GetKVPStringValue(HKEY ParentKey, const 
 	if (ValueQueryResult == ERROR_SUCCESS && !((ValueType == REG_SZ) || (ValueType == REG_EXPAND_SZ)))
 	{
 		ValueQueryResult = ERROR_FILE_NOT_FOUND;
-		ReceiveBuffer[0] = L'\0';
+		ReceiveBuffer[0] = 0;
 	}
 	return std::make_pair(ValueQueryResult, std::wstring{ ReceiveBuffer });
 }
 
-static std::pair<LSTATUS, std::optional<RegistryKey>> FindSubkeyWithExpectedKVP(HKEY ParentKey, const wchar_t* KVPKeyName, const wchar_t* KVPKeyValue) noexcept
+static std::pair<LSTATUS, std::optional<RegistryKey>> FindSubkeyWithExpectedKVP (HKEY ParentKey, const wchar_t* KVPKeyName, const wchar_t* KVPKeyValue) noexcept
 {
 	auto[GetMaxSubkeyLengthResult, SubkeyNameLength] { GetMaxSubkeyNameLength(ParentKey)};
 	if (GetMaxSubkeyLengthResult == ERROR_SUCCESS)
@@ -87,7 +94,7 @@ static std::pair<ErrorRecord, std::wstring> GetModifyPath() noexcept
 	auto[RootOpenResult, RootKey] { OpenRegistryKey(HKEY_LOCAL_MACHINE, RegistryUninstallRoot)};
 	if (RootOpenResult != ERROR_SUCCESS)
 	{
-		return std::pair(ErrorRecord(RootOpenResult, L"Accessing uninstall registry branch"), MSICmd);
+		return std::pair(ErrorRecord(RootOpenResult, ActivityAccessingUninstallRegistry), MSICmd);
 	}
 
 	auto[InstallOpenResult, ExpectedInstallKey] = OpenRegistryKey(RootKey.get(), ExpectedWACGUID);
@@ -101,12 +108,12 @@ static std::pair<ErrorRecord, std::wstring> GetModifyPath() noexcept
 		}
 		else
 		{
-			return std::pair(ErrorRecord(InstallOpenResult, L"Searching for WAC installation"), MSICmd);
+			return std::pair(ErrorRecord(InstallOpenResult, ActivitySearchingForWAC), MSICmd);
 		}
 	}
 	else if (InstallOpenResult != ERROR_SUCCESS)
 	{
-		return std::pair(ErrorRecord(InstallOpenResult, L"Searching for expected installation key"), MSICmd);
+		return std::pair(ErrorRecord(InstallOpenResult, ActivitySearchingForInstallation), MSICmd);
 	}
 	else
 	{
@@ -114,7 +121,7 @@ static std::pair<ErrorRecord, std::wstring> GetModifyPath() noexcept
 	}
 
 	auto[GetPathResult, DiscoveredPath] = GetKVPStringValue(RawInstallKey, AppModifyPathFieldName);
-	return std::pair(ErrorRecord(GetPathResult, L"Reading app modify command line"), DiscoveredPath);
+	return std::pair(ErrorRecord(GetPathResult, ActivityReadingAppModifyKVP), DiscoveredPath);
 }
 
 static std::pair<ErrorRecord, int> GetListeningPort() noexcept
@@ -123,18 +130,18 @@ static std::pair<ErrorRecord, int> GetListeningPort() noexcept
 	auto[RootOpenResult, RootKey] { OpenRegistryKey(HKEY_LOCAL_MACHINE, RegistryExpectedAppRoot)};
 	if (RootOpenResult != ERROR_SUCCESS)
 	{
-		return std::pair(ErrorRecord(RootOpenResult, L"Accessing application registry branch"), Port);
+		return std::pair(ErrorRecord(RootOpenResult, ActivityAccessingAppRegistry), Port);
 	}
 	auto[GetPortResult, DiscoveredPort] = GetKVPStringValue(RootKey.get(), PortFieldName);
 	if (GetPortResult == ERROR_SUCCESS)
 		Port = std::stoi(std::wstring{ DiscoveredPort });
-	return std::pair(ErrorRecord(GetPortResult, L"Reading port from registry"), Port);
+	return std::pair(ErrorRecord(GetPortResult, ActivityReadingPortKVP), Port);
 }
 
 std::tuple<ErrorRecord, std::wstring, int> GetWACInstallInfo() noexcept
 {
 	auto [GetModifyRegistryResult, ModifyPath] {GetModifyPath()};
-	if (GetModifyRegistryResult.GetErrorCode() == ERROR_SUCCESS)
+	if (GetModifyRegistryResult.ErrorCode() == ERROR_SUCCESS)
 	{
 		auto [GetPortResult, Port] {GetListeningPort()};
 		return std::make_tuple(GetPortResult, ModifyPath, Port);
@@ -147,12 +154,11 @@ ErrorRecord SetListeningPort(const unsigned int Port) noexcept
 	auto[RootOpenResult, RootKey] { OpenRegistryKey(HKEY_LOCAL_MACHINE, RegistryExpectedAppRoot, true)};
 	if (RootOpenResult != ERROR_SUCCESS)
 	{
-		return ErrorRecord(RootOpenResult, L"Accessing application registry branch");
+		return ErrorRecord(RootOpenResult, ActivityAccessingAppRegistry);
 	}
 	auto PortBytes{ std::to_wstring(Port) };
 	return ErrorRecord(RegSetValueEx(
 		RootKey.get(), PortFieldName, 0, REG_SZ, (BYTE*)PortBytes.c_str(),
-		(PortBytes.size() * 2) + 2),	// wants bytes, these are wchar_ts
-		L"Setting port registry value");
+		(PortBytes.size() + 1) * 2),	// wants bytes, these are wchar_ts
+		ActivitySettingPortKVP);
 }
-

@@ -9,4 +9,5 @@
 // - int: current WAC port number
 std::tuple<ErrorRecord, std::wstring, int> GetWACInstallInfo() noexcept;
 
+// Updates WAC's relevant registry key to reflect the new port
 ErrorRecord SetListeningPort(const unsigned int Port) noexcept;

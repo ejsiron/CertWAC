@@ -1,17 +1,12 @@
 #include <map>
 #include <sstream>
 #include <string>
-#include "ActionDialog.h"
 #include "ComputerCertificate.h"
+#include "ErrorDialog.h"
 #include "ErrorRecord.h"
 #include "InstallInfo.h"
 #include "MainDialog.h"
 #include "StringUtility.h"
-
-static std::wstring FormatErrorForPopup(const DWORD ErrorCode, const std::wstring& ErrorMessage, const std::wstring& Activity) noexcept
-{
-	return std::wstring{ L"Activity: " + Activity + L"\r\nErrorCode: " + std::to_wstring(ErrorCode) + L": " + ErrorMessage };
-}
 
 static std::wstring SplitForOutput(const std::vector<std::wstring>& SplitInput)
 {
@@ -80,7 +75,7 @@ INT_PTR CALLBACK MainDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM
 		SetWindowLongPtr(HandleDialogMain, GWL_USERDATA, (LONG_PTR)this);
 		if (auto LastError = GetLastError())
 		{
-			MessageBox(HandleDialogMain, FormatErrorForPopup(LastError, ErrorRecord::GetErrorMessage(LastError).c_str(), L"Setting application information").c_str(), L"Startup Error", MB_OK);
+			ErrorDialog(AppInstance, HandleDialogMain, ErrorRecord(LastError, L"Setting up application environment"));
 			PostQuitMessage(LastError);
 		}
 		else
@@ -101,15 +96,6 @@ INT_PTR CALLBACK MainDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM
 		return TRUE;
 	}
 	return FALSE;
-}
-
-const DWORD MainDialog::GetWACInstallationInfo()
-{
-	auto[RegistryError, ModifyPath, Port] = GetWACInstallInfo();
-	auto ErrorCode = RegistryError.GetErrorCode();
-	CmdlineModifyPath = ModifyPath;
-	SetDlgItemText(HandleDialogMain, IDC_PORT, std::to_wstring(Port).c_str());
-	return ErrorCode;
 }
 
 void MainDialog::DisplayCertificateList() noexcept
@@ -159,7 +145,7 @@ void MainDialog::DisplayCertificate()
 		CertificateDisplay << L"Thumbprint: " << Thumbprint;
 		CertificateText = CertificateDisplay.str();
 		SetPictureBoxImage(IDC_ICONCERTVALID, (StatusGreenCertificateValid = Certificate.IsWithinValidityPeriod()));
-		SetPictureBoxImage(IDC_ICONSERVAUTHALLOWED, (StatusGreenServerAuth = Certificate.EKUServerAuthentication()));
+		SetPictureBoxImage(IDC_ICONSERVAUTHALLOWED, (StatusGreenServerAuth = Certificate.HasServerAuthentication()));
 		SetPictureBoxImage(IDC_ICONHASPRIVATEKEY, (StatusGreenPrivateKey = Certificate.HasPrivateKey()));
 	}
 	SetDlgItemText(HandleDialogMain, IDC_CERTDETAILS, CertificateText.c_str());
@@ -171,33 +157,6 @@ void MainDialog::SetPictureBoxImage(const INT PictureBoxID, const bool Good)
 {
 	HBITMAP SelectedImage = Good ? TinyGreenBox : TinyRedBox;
 	SendDlgItemMessage(HandleDialogMain, PictureBoxID, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)SelectedImage);
-}
-
-static std::pair<std::wstring, std::wstring> BuildMsiCommandSet(std::wstring RegistryPath, std::wstring Thumbprint)
-{
-	const std::wstring MSIMiddle{ L" /qb SSL_CERTIFICATE_OPTION=installed SME_THUMBPRINT=" };
-	std::vector<std::wstring> MsiSet{ SplitString(L" ", RegistryPath) };
-	return std::make_pair(MsiSet[0], (MsiSet[1] + MSIMiddle + Thumbprint));
-}
-
-void MainDialog::StartActions()
-{
-	BOOL PortReadResult;
-	unsigned int Port{ GetDlgItemInt(HandleDialogMain, IDC_PORT, &PortReadResult, FALSE) };
-	if (PortReadResult != TRUE || Port < 1 || Port > 65535)	// max valid range for IP ports
-	{
-		MessageBox(HandleDialogMain, L"Port must be greater than 0 and less than 65535", L"Port Error", MB_ICONERROR);
-		SetFocus(GetDlgItem(HandleDialogMain, IDC_PORT));
-		return;
-	}
-	ErrorRecord SetPortError{ SetListeningPort(Port) };
-	if(SetPortError.GetErrorCode() != ERROR_SUCCESS)
-		MessageBox(HandleDialogMain, FormatErrorForPopup(SetPortError.GetErrorCode(), SetPortError.GetErrorMessage(), SetPortError.GetActivity()).c_str(), L"Port Error", MB_ICONERROR);
-	std::vector<std::tuple<std::wstring, std::wstring, std::wstring>> Actions;
-	auto [MsiCmd, MsiParams] {BuildMsiCommandSet(CmdlineModifyPath, Thumbprint)};
-	Actions.emplace_back(std::tuple(L"Running installer", MsiCmd, MsiParams));
-	Actions.emplace_back(std::tuple(L"Starting service", L"sc", L"start ServerManagementGateway"));
-	ActionDialog ActionWindow(AppInstance, HandleDialogMain, Actions);
 }
 
 const DWORD MainDialog::InitDialog() noexcept
