@@ -43,10 +43,13 @@ void ActionDialog::CenterWindow()
 	GetWindowRect(Parent, &ParentRect);
 	RECT ThisRect;
 	GetWindowRect(HandleDialogAction, &ThisRect);
-	SetWindowPos(HandleDialogAction, NULL,
+	POINT TargetPoint{
 		((ParentRect.right - ParentRect.left - ThisRect.right - ThisRect.left) / 2),
-		((ParentRect.bottom - ParentRect.top - ThisRect.bottom - ThisRect.top) / 2),
-		0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+		((ParentRect.bottom - ParentRect.top - ThisRect.bottom - ThisRect.top) / 2)
+	};
+	ScreenToClient(Parent, &TargetPoint);
+	SetWindowPos(HandleDialogAction, NULL,
+		TargetPoint.x, TargetPoint.y, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
 }
 
 INT_PTR CALLBACK ActionDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM lParam)
@@ -73,4 +76,5 @@ ActionDialog::ActionDialog(const HINSTANCE Instance, const HWND Parent, const st
 	:AppInstance(Instance), DialogActions(Actions)
 {
 	DialogBoxParam(Instance, MAKEINTRESOURCE(IDD_ACTIONDIALOG), Parent, &SharedDialogProc, (LPARAM)this);
+	PostQuitMessage(0);
 }

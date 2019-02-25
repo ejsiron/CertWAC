@@ -17,7 +17,6 @@ private:
 
 	/* Controller components */
 	std::vector<ComputerCertificate> Certificates{};
-	int ListeningPort;
 	std::wstring CmdlineModifyPath{};
 	std::wstring Thumbprint{};
 	const DWORD GetWACInstallationInfo();

@@ -108,8 +108,7 @@ const DWORD MainDialog::GetWACInstallationInfo()
 	auto[RegistryError, ModifyPath, Port] = GetWACInstallInfo();
 	auto ErrorCode = RegistryError.GetErrorCode();
 	CmdlineModifyPath = ModifyPath;
-	ListeningPort = Port;
-	SetDlgItemText(HandleDialogMain, IDC_PORT, std::to_wstring(ListeningPort).c_str());
+	SetDlgItemText(HandleDialogMain, IDC_PORT, std::to_wstring(Port).c_str());
 	return ErrorCode;
 }
 
@@ -166,7 +165,6 @@ void MainDialog::DisplayCertificate()
 	SetDlgItemText(HandleDialogMain, IDC_CERTDETAILS, CertificateText.c_str());
 	EnableDialogItem(IDOK, StatusGreenWACDetection && StatusGreenCertificateValid &&
 		StatusGreenServerAuth && StatusGreenPrivateKey);
-	EnableDialogItem(IDOK, true);
 }
 
 void MainDialog::SetPictureBoxImage(const INT PictureBoxID, const bool Good)
@@ -179,11 +177,22 @@ static std::pair<std::wstring, std::wstring> BuildMsiCommandSet(std::wstring Reg
 {
 	const std::wstring MSIMiddle{ L" /qb SSL_CERTIFICATE_OPTION=installed SME_THUMBPRINT=" };
 	std::vector<std::wstring> MsiSet{ SplitString(L" ", RegistryPath) };
-	return std::make_pair(MsiSet[0], (MsiSet[0] + MSIMiddle + Thumbprint));
+	return std::make_pair(MsiSet[0], (MsiSet[1] + MSIMiddle + Thumbprint));
 }
 
 void MainDialog::StartActions()
 {
+	BOOL PortReadResult;
+	unsigned int Port{ GetDlgItemInt(HandleDialogMain, IDC_PORT, &PortReadResult, FALSE) };
+	if (PortReadResult != TRUE || Port < 1 || Port > 65535)	// max valid range for IP ports
+	{
+		MessageBox(HandleDialogMain, L"Port must be greater than 0 and less than 65535", L"Port Error", MB_ICONERROR);
+		SetFocus(GetDlgItem(HandleDialogMain, IDC_PORT));
+		return;
+	}
+	ErrorRecord SetPortError{ SetListeningPort(Port) };
+	if(SetPortError.GetErrorCode() != ERROR_SUCCESS)
+		MessageBox(HandleDialogMain, FormatErrorForPopup(SetPortError.GetErrorCode(), SetPortError.GetErrorMessage(), SetPortError.GetActivity()).c_str(), L"Port Error", MB_ICONERROR);
 	std::vector<std::tuple<std::wstring, std::wstring, std::wstring>> Actions;
 	auto [MsiCmd, MsiParams] {BuildMsiCommandSet(CmdlineModifyPath, Thumbprint)};
 	Actions.emplace_back(std::tuple(L"Running installer", MsiCmd, MsiParams));

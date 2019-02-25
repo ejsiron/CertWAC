@@ -142,7 +142,7 @@ std::tuple<ErrorRecord, std::wstring, int> GetWACInstallInfo() noexcept
 	return std::make_tuple(GetModifyRegistryResult, std::wstring{}, 0);
 }
 
-ErrorRecord SetListeningPort(const int Port) noexcept
+ErrorRecord SetListeningPort(const unsigned int Port) noexcept
 {
 	auto[RootOpenResult, RootKey] { OpenRegistryKey(HKEY_LOCAL_MACHINE, RegistryExpectedAppRoot, true)};
 	if (RootOpenResult != ERROR_SUCCESS)
@@ -151,7 +151,8 @@ ErrorRecord SetListeningPort(const int Port) noexcept
 	}
 	auto PortBytes{ std::to_wstring(Port) };
 	return ErrorRecord(RegSetValueEx(
-		RootKey.get(), PortFieldName, 0, REG_SZ, (BYTE*)PortBytes.c_str(), PortBytes.size() + 1),
+		RootKey.get(), PortFieldName, 0, REG_SZ, (BYTE*)PortBytes.c_str(),
+		(PortBytes.size() * 2) + 2),	// wants bytes, these are wchar_ts
 		L"Setting port registry value");
 }
 
