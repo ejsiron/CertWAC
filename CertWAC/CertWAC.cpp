@@ -1,4 +1,4 @@
-#include <Windows.h>
+#include "WindowsTarget.h"
 #include <tchar.h>
 #include "MainDialog.h"
 

@@ -176,6 +176,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="ActionDialog.h" />
     <ClInclude Include="StringUtility.h" />
+    <ClInclude Include="WindowsTarget.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CertWAC.rc" />

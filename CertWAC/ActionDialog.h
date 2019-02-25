@@ -10,10 +10,11 @@ class ActionDialog
 private:
 	/* Windows components */
 	const HINSTANCE AppInstance{ 0 };
+	HWND HandleDialogMain{ 0 };
 	HWND HandleDialogAction{ 0 };
 	static INT_PTR CALLBACK SharedDialogProc(HWND hDialog, UINT uMessage, WPARAM wParam, LPARAM lParam);
 	INT_PTR CALLBACK ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM lParam);
-	void CenterWindow();
+	void CenterInParent();
 
 	/* Controller */
 	const std::vector<std::tuple<std::wstring, std::wstring, std::wstring>>& DialogActions;

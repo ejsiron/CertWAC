@@ -36,20 +36,19 @@ void ActionDialog::InitiateAction()
 	}
 }
 
-void ActionDialog::CenterWindow()
-{
-	HWND Parent{ GetParent(HandleDialogAction) };
-	RECT ParentRect;
-	GetWindowRect(Parent, &ParentRect);
-	RECT ThisRect;
-	GetWindowRect(HandleDialogAction, &ThisRect);
-	POINT TargetPoint{
-		((ParentRect.right - ParentRect.left - ThisRect.right - ThisRect.left) / 2),
-		((ParentRect.bottom - ParentRect.top - ThisRect.bottom - ThisRect.top) / 2)
-	};
-	ScreenToClient(Parent, &TargetPoint);
-	SetWindowPos(HandleDialogAction, NULL,
-		TargetPoint.x, TargetPoint.y, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE);
+void ActionDialog::CenterInParent()
+{ // https://docs.microsoft.com/en-us/windows/desktop/dlgbox/using-dialog-boxes
+	RECT ParentRect, ChildRect, TargetRect;
+	GetWindowRect(HandleDialogMain, &ParentRect);
+	GetWindowRect(HandleDialogAction, &ChildRect);
+	CopyRect(&TargetRect, &ParentRect);
+	OffsetRect(&ChildRect, -ChildRect.left, -ChildRect.top);
+	OffsetRect(&TargetRect, -TargetRect.left, -TargetRect.top);
+	OffsetRect(&TargetRect, -ChildRect.right, -ChildRect.bottom);
+	SetWindowPos(HandleDialogAction, HWND_TOP,
+		(ParentRect.left + (TargetRect.right / 2)),
+		(ParentRect.top + (TargetRect.bottom / 2)),
+		0, 0, SWP_NOSIZE);
 }
 
 INT_PTR CALLBACK ActionDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM lParam)
@@ -58,7 +57,7 @@ INT_PTR CALLBACK ActionDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPAR
 	{
 	case WM_INITDIALOG:
 		SetWindowLongPtr(HandleDialogAction, GWL_USERDATA, (LONG_PTR)this);
-		CenterWindow();
+		CenterInParent();
 		InitiateAction();
 		break;
 	case WM_CLOSE:
@@ -75,6 +74,7 @@ INT_PTR CALLBACK ActionDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPAR
 ActionDialog::ActionDialog(const HINSTANCE Instance, const HWND Parent, const std::vector<std::tuple<std::wstring, std::wstring, std::wstring>>& Actions)
 	:AppInstance(Instance), DialogActions(Actions)
 {
-	DialogBoxParam(Instance, MAKEINTRESOURCE(IDD_ACTIONDIALOG), Parent, &SharedDialogProc, (LPARAM)this);
+	HandleDialogMain = Parent;
+	DialogBoxParam(Instance, MAKEINTRESOURCE(IDD_ACTIONDIALOG), HandleDialogMain, &SharedDialogProc, (LPARAM)this);
 	PostQuitMessage(0);
 }
