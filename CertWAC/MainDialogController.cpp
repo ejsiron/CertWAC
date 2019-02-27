@@ -51,7 +51,7 @@ void MainDialog::StartActions()
 void MainDialog::Refresh()
 {
 	// load and process WAC installation information
-	auto[InfoLoadError, ModifyPath, Port] = GetWACInstallInfo();
+	auto[InfoLoadError, ModifyPath, Port] {GetWACInstallInfo()};
 	SetPictureBoxImage(IDC_ICONWACINSTALLED, InfoLoadError.ErrorCode() == ERROR_SUCCESS);
 	CmdlineModifyPath = ModifyPath;
 	SetDlgItemText(HandleDialogMain, IDC_PORT, std::to_wstring(Port).c_str());
@@ -59,7 +59,7 @@ void MainDialog::Refresh()
 		ErrorDialog(AppInstance, HandleDialogMain, InfoLoadError);
 
 	// load and process installed computer certificates
-	auto[CertLoadError, CertificateList] = GetComputerCertificates();
+	auto[CertLoadError, CertificateList] {GetComputerCertificates()};
 	Certificates = CertificateList;
 	DisplayCertificateList();
 	if (CertLoadError.ErrorCode() != ERROR_SUCCESS)

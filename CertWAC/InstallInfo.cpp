@@ -54,8 +54,9 @@ static std::pair<LSTATUS, std::wstring> GetKVPStringValue(HKEY ParentKey, const 
 	return std::make_pair(ValueQueryResult, std::wstring{ ReceiveBuffer });
 }
 
-static std::pair<LSTATUS, std::optional<RegistryKey>> FindSubkeyWithExpectedKVP (HKEY ParentKey, const wchar_t* KVPKeyName, const wchar_t* KVPKeyValue) noexcept
+static std::pair<LSTATUS, std::wstring> FindSubkeyWithExpectedKVP(HKEY ParentKey, const wchar_t* KVPKeyName, const wchar_t* KVPKeyValue) noexcept
 {
+	std::wstring SubkeyName{};
 	auto[GetMaxSubkeyLengthResult, SubkeyNameLength] { GetMaxSubkeyNameLength(ParentKey)};
 	if (GetMaxSubkeyLengthResult == ERROR_SUCCESS)
 	{
@@ -68,14 +69,14 @@ static std::pair<LSTATUS, std::optional<RegistryKey>> FindSubkeyWithExpectedKVP 
 		{
 			++SubkeyIndex;
 			SubkeyNameRetrievedSize = SubkeyNameLength;	// reset during each iteration or the next will fail
-			auto[SubkeyOpenResult, Subkey] = OpenRegistryKey(ParentKey, RetrievedKeyName);
+			auto[SubkeyOpenResult, Subkey] { OpenRegistryKey(ParentKey, RetrievedKeyName)};
 			if (SubkeyOpenResult)
-				return std::make_pair(SubkeyOpenResult, std::nullopt);
+				return std::make_pair(SubkeyOpenResult, SubkeyName);
 
-			auto[GetValueResult, Value] = GetKVPStringValue(Subkey.get(), KVPKeyName);
+			auto[GetValueResult, Value] { GetKVPStringValue(Subkey.get(), KVPKeyName)};
 			if (GetValueResult == ERROR_SUCCESS && Value == KVPKeyValue)
 			{
-				return std::make_pair(GetValueResult, std::move(Subkey));
+				return std::make_pair(GetValueResult, RetrievedKeyName);
 			}
 		}
 		if (SubEnumResult == ERROR_NO_MORE_ITEMS)
@@ -83,44 +84,50 @@ static std::pair<LSTATUS, std::optional<RegistryKey>> FindSubkeyWithExpectedKVP 
 		else
 			GetMaxSubkeyLengthResult = SubEnumResult;
 	}
-	return std::make_pair(GetMaxSubkeyLengthResult, std::nullopt);
+	return std::make_pair(GetMaxSubkeyLengthResult, SubkeyName);
 }
 
 static std::pair<ErrorRecord, std::wstring> GetModifyPath() noexcept
 {
 	std::wstring MSICmd{};
-	HKEY RawInstallKey{ 0 };
 	auto[RootOpenResult, RootKey] { OpenRegistryKey(HKEY_LOCAL_MACHINE, RegistryUninstallRoot)};
 	if (RootOpenResult != ERROR_SUCCESS)
 	{
 		return std::pair(ErrorRecord(RootOpenResult, ActivityAccessingUninstallRegistry), MSICmd);
 	}
 
-	auto[InstallOpenResult, ExpectedInstallKey] = OpenRegistryKey(RootKey.get(), ExpectedWACGUID);
+	auto[InstallOpenResult, ExpectedInstallKey] {OpenRegistryKey(RootKey.get(), ExpectedWACGUID)};
+	if (InstallOpenResult == ERROR_SUCCESS)
+	{
+		auto[GetPathResult, DiscoveredPath] { GetKVPStringValue(ExpectedInstallKey.get(), AppModifyPathFieldName)};
+		return std::make_pair(ErrorRecord(GetPathResult, ActivitySearchingForWAC), DiscoveredPath);
+	}
 	if (InstallOpenResult == ERROR_FILE_NOT_FOUND)
 	{
-		auto[InstallOpenResult, OptInstallKey] = FindSubkeyWithExpectedKVP(RootKey.get(),
-			AppDisplayNameFieldName, ExpectedApplicationName);
-		if (InstallOpenResult == ERROR_SUCCESS && OptInstallKey)
+		auto[InstallOpenResult, OptInstallKeyName] { FindSubkeyWithExpectedKVP(RootKey.get(),
+			AppDisplayNameFieldName, ExpectedApplicationName)};
+		if (InstallOpenResult == ERROR_SUCCESS)
 		{
-			RawInstallKey = OptInstallKey.value().get();
+			LSTATUS LastAccessResult;
+			auto[OptOpenResult, OptInstallKey] {OpenRegistryKey(RootKey.get(), OptInstallKeyName)};
+			LastAccessResult = OptOpenResult;
+			if (LastAccessResult == ERROR_SUCCESS)
+			{
+				auto[GetPathResult, DiscoveredPath] { GetKVPStringValue(OptInstallKey.get(), AppModifyPathFieldName)};
+				LastAccessResult = GetPathResult;
+				MSICmd = DiscoveredPath;
+			}
+			return std::make_pair(ErrorRecord(LastAccessResult, ActivitySearchingForWAC), MSICmd);
 		}
 		else
 		{
 			return std::pair(ErrorRecord(InstallOpenResult, ActivitySearchingForWAC), MSICmd);
 		}
 	}
-	else if (InstallOpenResult != ERROR_SUCCESS)
+	else
 	{
 		return std::pair(ErrorRecord(InstallOpenResult, ActivitySearchingForInstallation), MSICmd);
 	}
-	else
-	{
-		RawInstallKey = ExpectedInstallKey.get();
-	}
-
-	auto[GetPathResult, DiscoveredPath] = GetKVPStringValue(RawInstallKey, AppModifyPathFieldName);
-	return std::pair(ErrorRecord(GetPathResult, ActivityReadingAppModifyKVP), DiscoveredPath);
 }
 
 static std::pair<ErrorRecord, int> GetListeningPort() noexcept
@@ -131,7 +138,7 @@ static std::pair<ErrorRecord, int> GetListeningPort() noexcept
 	{
 		return std::pair(ErrorRecord(RootOpenResult, ActivityAccessingAppRegistry), Port);
 	}
-	auto[GetPortResult, DiscoveredPort] = GetKVPStringValue(RootKey.get(), PortFieldName);
+	auto[GetPortResult, DiscoveredPort] { GetKVPStringValue(RootKey.get(), PortFieldName)};
 	if (GetPortResult == ERROR_SUCCESS)
 		Port = std::stoi(std::wstring{ DiscoveredPort });
 	return std::pair(ErrorRecord(GetPortResult, ActivityReadingPortKVP), Port);
