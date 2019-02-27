@@ -60,14 +60,13 @@ static std::pair<LSTATUS, std::optional<RegistryKey>> FindSubkeyWithExpectedKVP 
 	if (GetMaxSubkeyLengthResult == ERROR_SUCCESS)
 	{
 		std::wstring RetrievedKeyName{};
-		SubkeyNameLength++;
-		RetrievedKeyName.reserve(SubkeyNameLength);
+		RetrievedKeyName.reserve(++SubkeyNameLength);
 		LSTATUS SubEnumResult{ 0 };
 		DWORD SubkeyIndex{ 0 };
 		DWORD SubkeyNameRetrievedSize{ SubkeyNameLength };
 		while ((SubEnumResult = RegEnumKeyEx(ParentKey, SubkeyIndex, RetrievedKeyName.data(), &SubkeyNameRetrievedSize, NULL, NULL, NULL, NULL)) == ERROR_SUCCESS)
 		{
-			SubkeyIndex++;
+			++SubkeyIndex;
 			SubkeyNameRetrievedSize = SubkeyNameLength;	// reset during each iteration or the next will fail
 			auto[SubkeyOpenResult, Subkey] = OpenRegistryKey(ParentKey, RetrievedKeyName);
 			if (SubkeyOpenResult)

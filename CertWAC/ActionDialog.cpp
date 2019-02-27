@@ -1,5 +1,6 @@
 #include "ActionDialog.h"
 #include "Action.h"
+#include "WindowsUtility.h"
 
 INT_PTR CALLBACK ActionDialog::SharedDialogProc(HWND hDialog, UINT uMessage, WPARAM wParam, LPARAM lParam)
 {
@@ -36,32 +37,17 @@ void ActionDialog::InitiateAction()
 	}
 }
 
-void ActionDialog::CenterInParent() noexcept
-{ // https://docs.microsoft.com/en-us/windows/desktop/dlgbox/using-dialog-boxes
-	RECT ParentRect, ChildRect, TargetRect;
-	GetWindowRect(HandleDialogMain, &ParentRect);
-	GetWindowRect(HandleDialogAction, &ChildRect);
-	CopyRect(&TargetRect, &ParentRect);
-	OffsetRect(&ChildRect, -ChildRect.left, -ChildRect.top);
-	OffsetRect(&TargetRect, -TargetRect.left, -TargetRect.top);
-	OffsetRect(&TargetRect, -ChildRect.right, -ChildRect.bottom);
-	SetWindowPos(HandleDialogAction, HWND_TOP,
-		(ParentRect.left + (TargetRect.right / 2)),
-		(ParentRect.top + (TargetRect.bottom / 2)),
-		0, 0, SWP_NOSIZE);
-}
-
 INT_PTR CALLBACK ActionDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMessage)
 	{
 	case WM_INITDIALOG:
 		SetWindowLongPtr(HandleDialogAction, GWL_USERDATA, (LONG_PTR)this);
-		CenterInParent();
+		CenterInParent(HandleDialogMain, HandleDialogAction);
 		InitiateAction();
 		break;
 	case WM_CLOSE:
-		DestroyWindow(HandleDialogAction);
+		EndDialog(HandleDialogAction, 0);
 		return TRUE;
 	case WMU_SUBTHREADCOMPLETE:
 		++CompletedActions;

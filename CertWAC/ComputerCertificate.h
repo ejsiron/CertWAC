@@ -24,17 +24,17 @@ public:
 	ComputerCertificate& operator=(const ComputerCertificate&) = default;
 	ComputerCertificate(ComputerCertificate&&)=default;
 	ComputerCertificate& operator=(ComputerCertificate&&) = default;
-	void SubjectName(const std::wstring& NewSubjectName);
-	const std::wstring& SubjectName() const noexcept { return subjectname; }
-	void Issuer(const std::wstring& NewIssuer);
-	const std::wstring Issuer() const noexcept { return issuer; }
-	void Thumbprint(const std::wstring& NewThumbprint);
-	const std::wstring Thumbprint() const noexcept { return thumbprint; }
+	void SubjectName(const std::wstring& NewSubjectName) { subjectname = NewSubjectName; };
+	const std::wstring& SubjectName() const { return subjectname; }
+	void Issuer(const std::wstring& NewIssuer) { issuer = NewIssuer; }
+	const std::wstring Issuer() const { return issuer; }
+	void Thumbprint(const std::wstring& NewThumbprint) { thumbprint = NewThumbprint; }
+	const std::wstring Thumbprint() const { return thumbprint; }
 	void ValidFrom(const FILETIME NewValidityStart) noexcept { validfrom = NewValidityStart; }
-	const std::wstring ValidFrom() const noexcept;
+	const std::wstring ValidFrom() const;
 	void ValidTo(const FILETIME NewValidityEnd) noexcept { validto = NewValidityEnd; }
-	const std::wstring ValidTo() const noexcept;
-	void SubjectAlternateNames(const std::vector<std::wstring>& NewSubjectAlternateNames);
+	const std::wstring ValidTo() const;
+	void SubjectAlternateNames(const std::vector<std::wstring>& NewSubjectAlternateNames) { subjectalternatenames = NewSubjectAlternateNames; }
 	const std::vector<std::wstring>& SubjectAlternateNames() const noexcept { return subjectalternatenames; }
 	void HasServerAuthentication(const bool HasServerAuthenticationEKU) noexcept { serverauthentication = HasServerAuthenticationEKU; }
 	const bool HasServerAuthentication() const noexcept { return serverauthentication; }

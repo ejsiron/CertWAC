@@ -6,15 +6,11 @@
 #include "StringUtility.h"
 
 const wchar_t* MSIMiddle{ L" /qb SSL_CERTIFICATE_OPTION=installed SME_THUMBPRINT=" };
-
-const DWORD MainDialog::GetWACInstallationInfo()
-{
-	auto[RegistryError, ModifyPath, Port] = GetWACInstallInfo();
-	auto ErrorCode = RegistryError.ErrorCode();
-	CmdlineModifyPath = ModifyPath;
-	SetDlgItemText(HandleDialogMain, IDC_PORT, std::to_wstring(Port).c_str());
-	return ErrorCode;
-}
+const wchar_t* ActivityPortValidation{ L"Verifying that port is in range of 1 to 65535" };
+const wchar_t* ActionDescriptionRunningInstaller{ L"Running installer" };
+const wchar_t* ActionDescriptionStartingService{ L"Starting WAC service" };
+const wchar_t* ActionServiceController{ L"sc.exe" };	// do not localize
+const wchar_t* ParamsServiceController{ L"start ServerManagementGateway" }; // do not localize
 
 static std::pair<std::wstring, std::wstring> BuildMsiCommandSet(std::wstring RegistryPath, std::wstring Thumbprint)
 {
@@ -24,7 +20,7 @@ static std::pair<std::wstring, std::wstring> BuildMsiCommandSet(std::wstring Reg
 		return std::make_pair(MsiSet[0], (MsiSet[1] + MSIMiddle + Thumbprint));
 	}
 	else
-	{	// these values should always be "msiexec.exe ...", but this might work if something changed
+	{	// these values should always be "msiexec.exe[SPACE]...", but this might work if something changed
 		return std::make_pair(RegistryPath, MSIMiddle + Thumbprint);
 	}
 }
@@ -35,16 +31,37 @@ void MainDialog::StartActions()
 	unsigned int Port{ GetDlgItemInt(HandleDialogMain, IDC_PORT, &PortReadResult, FALSE) };
 	if (PortReadResult != TRUE || Port < 1 || Port > 65535)	// max valid range for IP ports
 	{
-		ErrorDialog(AppInstance, HandleDialogMain, ErrorRecord(ERROR_INVALID_PARAMETER, L"Verifying that port is in range of 1 to 65535"));
-		SetFocus(GetDlgItem(HandleDialogMain, IDC_PORT));
+		ErrorDialog(AppInstance, HandleDialogMain, ErrorRecord(ERROR_INVALID_PARAMETER, ActivityPortValidation));
+		SendMessage(GetDlgItem(HandleDialogMain, IDC_PORT), EM_SETSEL, 0, -1);
+		SetFocus(GetDlgItem(HandleDialogMain, IDC_PORT));		
 		return;
 	}
 	ErrorRecord SetPortError{ SetListeningPort(Port) };
 	if (SetPortError.ErrorCode() != ERROR_SUCCESS)
+	{
 		ErrorDialog(AppInstance, HandleDialogMain, SetPortError);
+	}
 	std::vector<std::tuple<std::wstring, std::wstring, std::wstring>> Actions;
 	auto [MsiCmd, MsiParams] {BuildMsiCommandSet(CmdlineModifyPath, Thumbprint)};
-	Actions.emplace_back(std::tuple(L"Running installer", MsiCmd, MsiParams));
-	Actions.emplace_back(std::tuple(L"Starting service", L"sc", L"start ServerManagementGateway"));
+	Actions.emplace_back(std::tuple(ActionDescriptionRunningInstaller, MsiCmd, MsiParams));
+	Actions.emplace_back(std::tuple(ActionDescriptionStartingService, ActionServiceController, ParamsServiceController));
 	ActionDialog ActionWindow(AppInstance, HandleDialogMain, Actions);
+}
+
+void MainDialog::Refresh()
+{
+	// load and process WAC installation information
+	auto[InfoLoadError, ModifyPath, Port] = GetWACInstallInfo();
+	SetPictureBoxImage(IDC_ICONWACINSTALLED, InfoLoadError.ErrorCode() == ERROR_SUCCESS);
+	CmdlineModifyPath = ModifyPath;
+	SetDlgItemText(HandleDialogMain, IDC_PORT, std::to_wstring(Port).c_str());
+	if (InfoLoadError.ErrorCode() != ERROR_SUCCESS)
+		ErrorDialog(AppInstance, HandleDialogMain, InfoLoadError);
+
+	// load and process installed computer certificates
+	auto[CertLoadError, CertificateList] = GetComputerCertificates();
+	Certificates = CertificateList;
+	DisplayCertificateList();
+	if (CertLoadError.ErrorCode() != ERROR_SUCCESS)
+		ErrorDialog(AppInstance, HandleDialogMain, CertLoadError);
 }

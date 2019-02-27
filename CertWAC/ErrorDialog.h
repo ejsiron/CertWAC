@@ -10,6 +10,7 @@ class ErrorDialog
 private:
 	/* Windows components */
 	const HINSTANCE AppInstance{ 0 };
+	HWND HandleDialogParent{ 0 };
 	HWND HandleDialogError{ 0 };
 	static INT_PTR CALLBACK SharedDialogProc(HWND hDialog, UINT uMessage, WPARAM wParam, LPARAM lParam);
 	INT_PTR CALLBACK ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM lParam);

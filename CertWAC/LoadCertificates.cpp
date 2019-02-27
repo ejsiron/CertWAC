@@ -1,10 +1,11 @@
+#pragma comment(lib, "crypt32.lib")
+#pragma comment(lib, "NCrypt.lib")
 #include <Windows.h>
 #include <wincrypt.h>
 #include <iomanip>
 #include <sstream>
 #include "ComputerCertificate.h"
-#pragma comment(lib, "crypt32.lib")
-#pragma comment(lib, "NCrypt.lib")
+#include "StringUtility.h"
 
 const char* ServerAuthenticationOID{ "1.3.6.1.5.5.7.3.1" };
 
@@ -48,7 +49,7 @@ static std::wstring GetNameFromCertificate(PCCERT_CONTEXT pCertContext, CertName
 		CertNameToStr(pCertContext->dwCertEncodingType, DesiredName,
 			CERT_X500_NAME_STR | CERT_NAME_STR_REVERSE_FLAG, CertName.data(), NameSize);
 	}
-	return CertName;
+	return std::move(CleanWindowsString(CertName));
 }
 
 std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates()
@@ -115,7 +116,7 @@ std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates
 						Extension->Value.pbData, Extension->Value.cbData,
 						(void*)AlternateName.data(), &DataSize))
 					{
-						AlternateNames.emplace_back(std::move(AlternateName));
+						AlternateNames.emplace_back(std::move(CleanWindowsString(AlternateName)));
 					}
 				}
 			}
@@ -138,7 +139,7 @@ std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates
 				{
 					HashStream << std::setw(2) << std::setfill(L'0') << HashByte;
 				}
-				ThisCert.Thumbprint(HashStream.str());
+				ThisCert.Thumbprint(std::move(CleanWindowsString(HashStream.str())));
 			}
 		}
 		

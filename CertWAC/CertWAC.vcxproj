@@ -177,6 +177,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="ActionDialog.h" />
     <ClInclude Include="StringUtility.h" />
+    <ClInclude Include="WindowsUtility.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CertWAC.rc" />
@@ -193,6 +194,7 @@
     <ClCompile Include="MainDialogController.cpp" />
     <ClCompile Include="MainDialogUI.cpp" />
     <ClCompile Include="StringUtility.cpp" />
+    <ClCompile Include="WindowsUtility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Resources\CertWAC.ico" />

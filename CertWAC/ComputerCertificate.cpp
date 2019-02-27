@@ -2,7 +2,9 @@
 #include "ComputerCertificate.h"
 #include "StringUtility.h"
 
-static std::wstring GetStringFromFileTime(const FILETIME& Time) noexcept
+const wchar_t* RegExPatternDomainContextOrCanonicalName{ L"(?:DC|CN)=([^,]*)" };
+
+static std::wstring GetStringFromFileTime(const FILETIME& Time)
 {
 	std::wstring ReturnTime{};
 	SYSTEMTIME SystemTime{ 0 };
@@ -18,38 +20,14 @@ static std::wstring GetStringFromFileTime(const FILETIME& Time) noexcept
 	return CleanWindowsString(ReturnTime);
 }
 
-void ComputerCertificate::SubjectName(const std::wstring& NewSubjectName)
-{
-	subjectname = std::move(CleanWindowsString(NewSubjectName));
-}
-
-void ComputerCertificate::Issuer(const std::wstring& NewIssuer)
-{
-	issuer = CleanWindowsString(NewIssuer);
-}
-
-void ComputerCertificate::Thumbprint(const std::wstring& NewThumbprint)
-{
-	thumbprint = CleanWindowsString(NewThumbprint);
-}
-
-const std::wstring ComputerCertificate::ValidFrom() const noexcept
+const std::wstring ComputerCertificate::ValidFrom() const
 {
 	return GetStringFromFileTime(validfrom);
 }
 
-const std::wstring ComputerCertificate::ValidTo() const noexcept
+const std::wstring ComputerCertificate::ValidTo() const
 {
 	return GetStringFromFileTime(validto);
-}
-
-void ComputerCertificate::SubjectAlternateNames(const std::vector<std::wstring>& NewSubjectAlternateNames)
-{
-	subjectalternatenames = std::vector<std::wstring>{};
-	for (auto const& NewSubjectAlternateName : NewSubjectAlternateNames)
-	{
-		subjectalternatenames.emplace_back(std::move(CleanWindowsString(NewSubjectAlternateName)));
-	}
 }
 
 const bool ComputerCertificate::IsWithinValidityPeriod() const noexcept
@@ -67,7 +45,7 @@ const bool ComputerCertificate::IsWithinValidityPeriod() const noexcept
 std::wstring ComputerCertificate::FQDNFromSimpleRDN(const std::wstring& RDN)
 {
 	std::vector<std::wstring>FQDNComponents{};
-	const std::wregex FQDNComponentMatch{ L"(?:DC|CN)=([^,]*)" };
+	const std::wregex FQDNComponentMatch{ RegExPatternDomainContextOrCanonicalName };
 	using rxit = std::wsregex_iterator;
 	rxit EmptyRegexIterator{};
 	for (rxit DomainPartWalker(RDN.cbegin(), RDN.cend(), FQDNComponentMatch);

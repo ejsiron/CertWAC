@@ -19,8 +19,8 @@ private:
 	std::vector<ComputerCertificate> Certificates{};
 	std::wstring CmdlineModifyPath{};
 	std::wstring Thumbprint{};
-	const DWORD GetWACInstallationInfo();
-	const DWORD InitDialog() noexcept;
+	const void InitDialog() noexcept;
+	void Refresh();
 	void EnableDialogItem(const int DialogItem, const bool Enable = true) const noexcept { EnableWindow(GetDlgItem(HandleDialogMain, DialogItem), Enable); };
 	void DisplayCertificateList() noexcept;
 	void DisplayCertificate();

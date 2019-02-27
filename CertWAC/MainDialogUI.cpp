@@ -1,4 +1,3 @@
-#include <map>
 #include <sstream>
 #include <string>
 #include "ComputerCertificate.h"
@@ -8,7 +7,18 @@
 #include "MainDialog.h"
 #include "StringUtility.h"
 
-static std::wstring SplitForOutput(const std::vector<std::wstring>& SplitInput)
+const wchar_t* NewLine{ L"\r\n" };
+const wchar_t* ActivitySetupEnvironment{ L"Setting up application environment" };
+const wchar_t* NoCertsFound{ L"No computer certificates found" };
+const wchar_t* RegexPatternCommaWithOptionalSpace{ L", ?" };
+const wchar_t* FieldSubject{ L"Subject:" }; // program will determine whether or not to prepend a L" "
+const wchar_t* FieldIssuer{ L"Issuer: " };
+const wchar_t* FieldSAN{ L"Subject Alternate Names:" }; // program will determine whether or not to prepend a L" "
+const wchar_t* FieldValidFrom{ L"Valid from: " };
+const wchar_t* FieldValidTo{ L"Valid to: " };
+const wchar_t* FieldThumbprint{ L"Thumbprint: " };
+
+static std::wstring ConvertSplitForDisplay(const std::vector<std::wstring>& SplitInput)
 {
 	std::wstring Output{};
 	if (SplitInput.size() > 1)
@@ -20,13 +30,13 @@ static std::wstring SplitForOutput(const std::vector<std::wstring>& SplitInput)
 	}
 	else if (SplitInput.size() == 1)
 		Output = L" " + SplitInput[0];
-	Output.append(L"\r\n");
+	Output.append(NewLine);
 	return Output;
 }
 
-static std::wstring SplitForOutput(const std::wstring& GluePattern, const std::wstring& Composite)
+static std::wstring ConvertSplitForDisplay(const std::wstring& GluePattern, const std::wstring& Composite)
 {
-	return SplitForOutput(SplitString(GluePattern, Composite));
+	return ConvertSplitForDisplay(SplitString(GluePattern, Composite));
 }
 
 INT_PTR CALLBACK MainDialog::SharedDialogProc(HWND hDialog, UINT uMessage, WPARAM wParam, LPARAM lParam)
@@ -61,13 +71,11 @@ INT_PTR CALLBACK MainDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM
 		case IDC_CERTLIST:
 			if (HIWORD(wParam) == CBN_SELCHANGE)
 				DisplayCertificate();
-			break;
+			return TRUE;
 		case IDC_REFRESH:
-			GetWACInstallationInfo();
-			DisplayCertificateList();
-			break;
+			Refresh();
+			return TRUE;
 		}
-		break;
 		break;
 	case WM_INITDIALOG:
 	{
@@ -75,14 +83,12 @@ INT_PTR CALLBACK MainDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM
 		SetWindowLongPtr(HandleDialogMain, GWL_USERDATA, (LONG_PTR)this);
 		if (auto LastError = GetLastError())
 		{
-			ErrorDialog(AppInstance, HandleDialogMain, ErrorRecord(LastError, L"Setting up application environment"));
+			ErrorDialog(AppInstance, HandleDialogMain, ErrorRecord(LastError, ActivitySetupEnvironment));
 			PostQuitMessage(LastError);
 		}
 		else
 		{
-			auto InitResult = InitDialog();
-			SetPictureBoxImage(IDC_ICONWACINSTALLED, InitResult == ERROR_SUCCESS);
-			DisplayCertificateList();
+			InitDialog();
 		}
 	}
 	break;
@@ -118,7 +124,7 @@ void MainDialog::DisplayCertificateList() noexcept
 		EnableDialogItem(IDC_CERTLIST, true);
 	}
 	else
-		SendMessage(CertList, CB_ADDSTRING, 0, (LPARAM)L"No computer certificates found");
+		SendMessage(CertList, CB_ADDSTRING, 0, (LPARAM)NoCertsFound);
 	SendMessage(CertList, CB_SETCURSEL, 0, 0);
 	DisplayCertificate();
 }
@@ -137,17 +143,20 @@ void MainDialog::DisplayCertificate()
 		ComputerCertificate& Certificate{ Certificates.at(SendMessage(CertList, CB_GETCURSEL, 0, 0)) };
 		Thumbprint = Certificate.Thumbprint();
 		std::wstringstream CertificateDisplay{};
-		CertificateDisplay << L"Subject:" << SplitForOutput(L", ?", Certificate.SubjectName());
-		CertificateDisplay << L"Issuer: " << SplitForOutput(L", ?", Certificate.Issuer());
-		CertificateDisplay << L"Subject Alternate Names:" << SplitForOutput(Certificate.SubjectAlternateNames());
-		CertificateDisplay << L"Valid from: " << Certificate.ValidFrom() << L"\r\n";
-		CertificateDisplay << L"Valid to: " << Certificate.ValidTo() << L"\r\n";
-		CertificateDisplay << L"Thumbprint: " << Thumbprint;
+		CertificateDisplay << FieldSubject << ConvertSplitForDisplay(RegexPatternCommaWithOptionalSpace, Certificate.SubjectName());
+		CertificateDisplay << FieldIssuer << ConvertSplitForDisplay(RegexPatternCommaWithOptionalSpace, Certificate.Issuer());
+		CertificateDisplay << FieldSAN << ConvertSplitForDisplay(Certificate.SubjectAlternateNames());
+		CertificateDisplay << FieldValidFrom << Certificate.ValidFrom() << NewLine;
+		CertificateDisplay << FieldValidTo << Certificate.ValidTo() << NewLine;
+		CertificateDisplay << FieldThumbprint << Thumbprint;
 		CertificateText = CertificateDisplay.str();
-		SetPictureBoxImage(IDC_ICONCERTVALID, (StatusGreenCertificateValid = Certificate.IsWithinValidityPeriod()));
-		SetPictureBoxImage(IDC_ICONSERVAUTHALLOWED, (StatusGreenServerAuth = Certificate.HasServerAuthentication()));
-		SetPictureBoxImage(IDC_ICONHASPRIVATEKEY, (StatusGreenPrivateKey = Certificate.HasPrivateKey()));
+		StatusGreenCertificateValid = Certificate.IsWithinValidityPeriod();
+		StatusGreenServerAuth = Certificate.HasServerAuthentication();
+		StatusGreenPrivateKey = Certificate.HasPrivateKey();
 	}
+	SetPictureBoxImage(IDC_ICONCERTVALID, StatusGreenCertificateValid);
+	SetPictureBoxImage(IDC_ICONSERVAUTHALLOWED, StatusGreenServerAuth);
+	SetPictureBoxImage(IDC_ICONHASPRIVATEKEY, StatusGreenPrivateKey);
 	SetDlgItemText(HandleDialogMain, IDC_CERTDETAILS, CertificateText.c_str());
 	EnableDialogItem(IDOK, StatusGreenWACDetection && StatusGreenCertificateValid &&
 		StatusGreenServerAuth && StatusGreenPrivateKey);
@@ -159,21 +168,13 @@ void MainDialog::SetPictureBoxImage(const INT PictureBoxID, const bool Good)
 	SendDlgItemMessage(HandleDialogMain, PictureBoxID, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)SelectedImage);
 }
 
-const DWORD MainDialog::InitDialog() noexcept
+const void MainDialog::InitDialog() noexcept
 {
-	HINSTANCE Instance{ GetModuleHandle(NULL) };
-	AppIcon = LoadIcon(Instance, MAKEINTRESOURCE(IDI_CERTWAC));
-	TinyGreenBox = LoadBitmap(Instance, MAKEINTRESOURCE(IDB_TINYGREENBOX));
-	TinyRedBox = LoadBitmap(Instance, MAKEINTRESOURCE(IDB_TINYREDBOX));
+	AppIcon = LoadIcon(AppInstance, MAKEINTRESOURCE(IDI_CERTWAC));
+	TinyGreenBox = LoadBitmap(AppInstance, MAKEINTRESOURCE(IDB_TINYGREENBOX));
+	TinyRedBox = LoadBitmap(AppInstance, MAKEINTRESOURCE(IDB_TINYREDBOX));
 	SendMessage(HandleDialogMain, WM_SETICON, ICON_SMALL, (LPARAM)AppIcon);
-	SetPictureBoxImage(IDC_ICONWACINSTALLED, false);
-	SetPictureBoxImage(IDC_ICONCERTVALID, false);
-	SetPictureBoxImage(IDC_ICONSERVAUTHALLOWED, false);
-	SetPictureBoxImage(IDC_ICONHASPRIVATEKEY, false);
-	auto[CertLoadError, CertificateList] = GetComputerCertificates();
-	Certificates = CertificateList;
-	auto ErrorCode = GetWACInstallationInfo();
-	return ErrorCode;
+	Refresh();
 }
 
 MainDialog::MainDialog(HINSTANCE Instance) : AppInstance(Instance)
