@@ -2,6 +2,10 @@
 
 Tool for easy selection of certificates to use in Windows Admin Center
 
+## BETA NOTICE
+
+This tool is currently in its first public beta. Please use caution if trying in production environments.
+
 ## Compatibility and Requirements
 
 The Windows Admin Certificate Selector requires:
@@ -38,6 +42,8 @@ WAC Certificate Selector presents a drop-down list of the available computer cer
 * The system must have the matching private key
 
 If all of the above are true, and a gateway installation of Windows Admin Center is detected, the **OK** button will be active.
+
+**Warning**: The reconfiguration stops the Windows Admin Center service. Windows Admin Center will be down and unavailable while MSI installs the certificate.
 
 ## How It Works
 
