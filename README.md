@@ -45,7 +45,7 @@ The installer also makes these changes (configurable):
 
 If you have not yet installed Windows Admin Center, run its installer. When prompted for certificate information, allow WAC to generate a self-signed certificate. Next, request a certificate from your provider, whether a PKI operated internally by your organization or a public PKI certificate retailer. The certificate must have the #Server Authentication# Enhanced Key Usage. Most providers include that in #Web Server# templates.Install the certificate into the local computer certificate store.
 
-Once you have WAC installed and a certificate prepared, run WAC Certificate Selector. If you obtained the MSI installation package, it will optionally place a shortcut on your Start menu and add its program folder to the PATH. If you have the standalone EXE, run ##CertWAC.exe## from the location where you placed it.
+Once you have WAC installed and a certificate prepared, run WAC Certificate Selector. If you obtained the MSI installation package, it will optionally place a shortcut on your Start menu and add its program folder to the PATH. If you have the standalone EXE, run **CertWAC.exe** from the location where you placed it.
 
 WAC Certificate Selector presents a drop-down list of the available computer certificates. It will show details of the selected certificate in the large text box. In order to be eligible, a certificate must meet all of the following criteria:
 
