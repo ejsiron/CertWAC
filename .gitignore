@@ -15,6 +15,8 @@
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+Release - MSI/
+Release - Standalone
 x64/
 x86/
 bld/

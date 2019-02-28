@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="548145e7-1450-4f29-b93a-4be6411054bc" Name="WAC Certificate Selector" Language="1033" Version="0.9.0.0" Manufacturer="Eric Siron" UpgradeCode="f47bdbe7-d4c6-4852-adfb-57ccac6bcb1a">
+    <Package InstallerVersion="301" Compressed="yes" InstallScope="perMachine" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate CabinetTemplate="wc{0}.cab" CompressionLevel="high" EmbedCab="yes" />
+
+    <!-- Icon that appears in arp -->
+    <Icon Id="CERTWACICO" SourceFile="$(var.Program.ProjectDir)Resources\CertWAC.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="CERTWACICO"/>
+
+    <!-- Feature Configuration -->
+    <Feature Id="ProductFeature" Title="WAC Certificate Selector" Level="1" ConfigurableDirectory="INSTALLFOLDER">
+      <ComponentGroupRef Id="ProductComponents" />
+      <Feature Id="ProductStartMenuIcon" Title="Start Menu Icon" Description="Program group and shortcut icon in the system Start menu" Level="1">
+        <ComponentRef Id="ApplicationShortcut"/>
+      </Feature>
+      <Feature Id="ProductPathModification" Title="Add to system PATH" Description="Modify the system PATH environment path to include the program folder" Level="1">
+        <ComponentRef Id="SetPath"/>
+      </Feature>
+    </Feature>
+    <Feature Id="VCRedist" Title="Visual C++ 17 32-bit Runtime" AllowAdvertise="no" Display="hidden" Level="1">
+      <MergeRef Id ="VCRedist"/>
+    </Feature>
+
+    <!-- UI Configuration -->
+    <!--<UIRef Id="WixUI_Mondo"/>-->
+    <WixVariable Id="WixUILicenseRtf" Value="MITLicense.rtf"/>
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch WAC Certificate Selector"/>
+    <Property Id="WixShellExecTarget" Value="[#EXEMAIN]"/>
+    <UI>
+      <UIRef Id="WixUI_Mondo"/>
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApplication">
+        WIXUI_EXITDIALOGOPTIONALCHECKBOX=1 and NOT Installed
+      </Publish>
+    </UI>
+
+    <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="no"/>
+  </Product>
+
+  <!-- Main install location -->
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <!-- Application folder -->
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="CertWAC" />
+      </Directory>
+      <!-- Start menu folder -->
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="WAC Certificate Selector"/>
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <!-- Merge module for VCRT -->
+  <Fragment>
+    <DirectoryRef Id="TARGETDIR">
+      <Merge Id="VCRedist" SourceFile="$(var.ProjectDir)\Microsoft_VC141_CRT_x86.msm" DiskId="1" Language="0" />
+    </DirectoryRef>
+  </Fragment>
+
+  <!-- Main executable file -->
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="ProductComponent">
+        <File Id="EXEMAIN" Name="CertWAC.exe" DiskId="1" Source="$(var.Program.TargetDir)" KeyPath="yes"/>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- Start menu shortcut -->
+  <Fragment>
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="4D9D8172-6BA0-46F3-8EFF-2FE1A0A35B3F">
+        <Shortcut Id="ApplicationStartMenuShortcut"
+          Name="WAC Certificate Selector"
+                  Description="Select the certificate to use with Windows Admin Center"
+                  Target="[#EXEMAIN]"
+                  WorkingDirectory="INSTALLFOLDER"
+        />
+        <RemoveFolder Id="CleanUpShortcut" Directory="ApplicationProgramsFolder" On="uninstall"/>
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+
+  <!-- Set PATH -->
+  <Fragment>
+    <DirectoryRef Id="TARGETDIR">
+      <Component Id="SetPath" Guid="B33B2816-E417-4F58-B402-32891CAF40C1">
+        <Environment Id="PATH" Name="PATH" Value="[INSTALLFOLDER]" Permanent="no" Part="last" Action="set" System="yes"/>
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+
+  <Fragment>
+
+  </Fragment>
+</Wix>
