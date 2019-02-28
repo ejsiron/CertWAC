@@ -26,7 +26,7 @@ The Windows Admin Certificate Selector requires:
 
 ## Packages
 
-Choose one of the two optional release packages
+You can download release builds from the [Releases page](https://github.com/ejsiron/CertWAC/releases). Choose one of the two packages:
 
 ### Standalone EXE
 
@@ -43,7 +43,7 @@ The installer also makes these changes (configurable):
 
 ## Usage
 
-If you have not yet installed Windows Admin Center, run its installer. When prompted for certificate information, allow WAC to generate a self-signed certificate. Next, request a certificate from your provider, whether a PKI operated internally by your organization or a public PKI certificate retailer. The certificate must have the #Server Authentication# Enhanced Key Usage. Most providers include that in #Web Server# templates.Install the certificate into the local computer certificate store.
+If you have not yet installed Windows Admin Center, run its installer. When prompted for certificate information, allow WAC to generate a self-signed certificate. Next, request a certificate from your provider, whether a PKI operated internally by your organization or a public PKI certificate retailer. The certificate must have the *Server Authentication* Enhanced Key Usage. Most providers include that in *Web Server* templates.Install the certificate into the local computer certificate store.
 
 Once you have WAC installed and a certificate prepared, run WAC Certificate Selector. If you obtained the MSI installation package, it will optionally place a shortcut on your Start menu and add its program folder to the PATH. If you have the standalone EXE, run **CertWAC.exe** from the location where you placed it.
 
