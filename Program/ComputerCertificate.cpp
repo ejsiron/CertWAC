@@ -17,7 +17,8 @@ static std::wstring GetStringFromFileTime(const FILETIME& Time)
 		GetDateFormatEx(LOCALE_NAME_USER_DEFAULT, DATE_SHORTDATE, &SystemTime,
 			NULL, ReturnTime.data(), TimeCharCount, NULL);
 	}
-	return CleanWindowsString(ReturnTime);
+	CleanWindowsString(ReturnTime);
+	return ReturnTime;
 }
 
 const std::wstring ComputerCertificate::ValidFrom() const

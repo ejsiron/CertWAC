@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="548145e7-1450-4f29-b93a-4be6411054bc" Name="WAC Certificate Selector" Language="1033" Version="0.9.0.0" Manufacturer="Eric Siron" UpgradeCode="f47bdbe7-d4c6-4852-adfb-57ccac6bcb1a">
+  <Product Id="FB47D78A-0C8E-49E1-8564-366A8FAE0624" Name="WAC Certificate Selector" Language="1033" Version="0.9.1.0" Manufacturer="Eric Siron" UpgradeCode="f47bdbe7-d4c6-4852-adfb-57ccac6bcb1a">
     <Package InstallerVersion="301" Compressed="yes" InstallScope="perMachine" />
 
-    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." Disallow="no" AllowSameVersionUpgrades="yes" />
     <MediaTemplate CabinetTemplate="wc{0}.cab" CompressionLevel="high" EmbedCab="yes" />
 
     <!-- Icon that appears in arp -->

@@ -2,14 +2,12 @@
 #include <regex>
 #include "StringUtility.h"
 
-std::wstring CleanWindowsString(const std::wstring& WindowsString)
+void CleanWindowsString(std::wstring& WindowsString)
 {
-	std::wstring NewString{ WindowsString };
-	while (NewString.size() && *NewString.crbegin() == L'\0')
+	while (WindowsString.size() && *WindowsString.crbegin() == L'\0')
 	{
-		NewString.pop_back();
+		WindowsString.pop_back();
 	}
-	return NewString;
 }
 
 std::wstring JoinString(const std::wstring& Glue, const std::vector<std::wstring>& Parts)

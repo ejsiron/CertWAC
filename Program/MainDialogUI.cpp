@@ -145,7 +145,7 @@ void MainDialog::DisplayCertificate()
 		std::wstringstream CertificateDisplay{};
 		CertificateDisplay << FieldSubject << ConvertSplitForDisplay(RegexPatternCommaWithOptionalSpace, Certificate.SubjectName());
 		CertificateDisplay << FieldIssuer << ConvertSplitForDisplay(RegexPatternCommaWithOptionalSpace, Certificate.Issuer());
-		CertificateDisplay << FieldSAN << ConvertSplitForDisplay(Certificate.SubjectAlternateNames());
+		CertificateDisplay << FieldSAN << ConvertSplitForDisplay(RegexPatternCommaWithOptionalSpace, Certificate.SubjectAlternateNames());
 		CertificateDisplay << FieldValidFrom << Certificate.ValidFrom() << NewLine;
 		CertificateDisplay << FieldValidTo << Certificate.ValidTo() << NewLine;
 		CertificateDisplay << FieldThumbprint << Thumbprint;
