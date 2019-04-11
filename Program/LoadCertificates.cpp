@@ -132,7 +132,7 @@ std::pair<ErrorRecord, std::vector<ComputerCertificate>> GetComputerCertificates
 				pCertContext->cbCertEncoded, ThumbprintBytes.data(), &CertSHA1HashSize))
 			{
 				std::wstringstream HashStream;
-				HashStream << std::hex;
+				HashStream << std::hex << std::uppercase;
 				for (auto const& HashByte : ThumbprintBytes)
 				{
 					HashStream << std::setw(2) << std::setfill(L'0') << HashByte;
