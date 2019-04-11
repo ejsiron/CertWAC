@@ -11,6 +11,7 @@ INT_PTR CALLBACK ErrorDialog::SharedDialogProc(HWND hDialog, UINT uMessage, WPAR
 	{
 		ThisErrorDialog = (ErrorDialog*)lParam;
 		ThisErrorDialog->HandleDialogError = hDialog;
+		BringWindowToTop(hDialog);
 	}
 	else
 		ThisErrorDialog = (ErrorDialog*)GetWindowLongPtr(hDialog, GWL_USERDATA);

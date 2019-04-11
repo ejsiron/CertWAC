@@ -54,8 +54,10 @@ static std::pair<LSTATUS, std::wstring> GetKVPStringValue(HKEY ParentKey, const 
 
 static std::pair<LSTATUS, std::wstring> FindSubkeyWithExpectedKVP(HKEY ParentKey, const wchar_t* KVPKeyName, const wchar_t* KVPKeyValue) noexcept
 {
+	LSTATUS LastResult{ 0 };
 	std::wstring SubkeyName{};
 	auto[GetMaxSubkeyLengthResult, SubkeyNameLength] { GetMaxSubkeyNameLength(ParentKey)};
+	LastResult = GetMaxSubkeyLengthResult;
 	if (GetMaxSubkeyLengthResult == ERROR_SUCCESS)
 	{
 		std::wstring RetrievedKeyName{};
@@ -69,18 +71,25 @@ static std::pair<LSTATUS, std::wstring> FindSubkeyWithExpectedKVP(HKEY ParentKey
 			SubkeyNameRetrievedSize = SubkeyNameLength;	// reset during each iteration or the next will fail
 			auto[SubkeyOpenResult, Subkey] { OpenRegistryKey(ParentKey, RetrievedKeyName)};
 			if (SubkeyOpenResult != ERROR_SUCCESS)
-				return std::make_pair(SubkeyOpenResult, SubkeyName);
+			{
+				continue;
+			}
 
 			auto[GetValueResult, Value] { GetKVPStringValue(Subkey.get(), KVPKeyName)};
 			if (GetValueResult == ERROR_SUCCESS && Value == KVPKeyValue)
 			{
-				return std::make_pair(GetValueResult, RetrievedKeyName);
+				SubkeyName.assign(RetrievedKeyName.c_str());	// direct assignment does not work
 			}
 		}
-		if (SubEnumResult == ERROR_NO_MORE_ITEMS)
-			GetMaxSubkeyLengthResult = ERROR_FILE_NOT_FOUND;
-		else
+		switch (SubEnumResult)
+		{
+		case ERROR_NO_MORE_ITEMS:
+			GetMaxSubkeyLengthResult = SubkeyName.length() > 0 ? ERROR_SUCCESS : ERROR_FILE_NOT_FOUND;
+			break;
+		default:
 			GetMaxSubkeyLengthResult = SubEnumResult;
+			break;
+		}
 	}
 	return std::make_pair(GetMaxSubkeyLengthResult, SubkeyName);
 }
@@ -89,14 +98,15 @@ static std::pair<ErrorRecord, std::wstring> GetModifyPath() noexcept
 {
 	std::wstring MSICmd{};
 	auto[RootOpenResult, RootKey] { OpenRegistryKey(HKEY_LOCAL_MACHINE, RegistryUninstallRoot)};
-	if (RootOpenResult != ERROR_SUCCESS)
+	LSTATUS ActivityResult{ RootOpenResult };
+	if (ActivityResult != ERROR_SUCCESS)
 	{
 		return std::pair(ErrorRecord(RootOpenResult, ActivityAccessingUninstallRegistry), MSICmd);
 	}
 
 	auto[InstallOpenResult, OptInstallKeyName] { FindSubkeyWithExpectedKVP(RootKey.get(),
 		AppDisplayNameFieldName, ExpectedApplicationName)};
-	LSTATUS ActivityResult{ ERROR_SUCCESS };
+	ActivityResult = InstallOpenResult;
 	if (InstallOpenResult == ERROR_SUCCESS)
 	{
 		auto[OptOpenResult, OptInstallKey] {OpenRegistryKey(RootKey.get(), OptInstallKeyName)};
