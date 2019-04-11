@@ -6,13 +6,11 @@
 const wchar_t* RegistryExpectedAppRoot{ L"SOFTWARE\\Microsoft\\ServerManagementGateway" };
 const wchar_t* PortFieldName{ L"SmePort" };
 const wchar_t* RegistryUninstallRoot{ L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall" };
-const wchar_t* ExpectedWACGUID{ L"{4FAE3A2E-4369-490E-97F3-0B3BFF183AB9}" };
 const wchar_t* ExpectedApplicationName{ L"Windows Admin Center" };
 const wchar_t* AppDisplayNameFieldName{ L"DisplayName" };
 const wchar_t* AppModifyPathFieldName{ L"ModifyPath" };
 
 const wchar_t* ActivityAccessingUninstallRegistry{ L"Accessing uninstall registry branch" };
-const wchar_t* ActivitySearchingForWAC{ L"Accessing expected WAC installation key" };
 const wchar_t* ActivitySearchingForInstallation{ L"Searching for WAC installation key" };
 const wchar_t* ActivityReadingAppModifyKVP{ L"Reading app modify command line" };
 const wchar_t* ActivityAccessingAppRegistry{ L"Accessing application registry branch" };
@@ -70,7 +68,7 @@ static std::pair<LSTATUS, std::wstring> FindSubkeyWithExpectedKVP(HKEY ParentKey
 			++SubkeyIndex;
 			SubkeyNameRetrievedSize = SubkeyNameLength;	// reset during each iteration or the next will fail
 			auto[SubkeyOpenResult, Subkey] { OpenRegistryKey(ParentKey, RetrievedKeyName)};
-			if (SubkeyOpenResult)
+			if (SubkeyOpenResult != ERROR_SUCCESS)
 				return std::make_pair(SubkeyOpenResult, SubkeyName);
 
 			auto[GetValueResult, Value] { GetKVPStringValue(Subkey.get(), KVPKeyName)};
@@ -96,38 +94,21 @@ static std::pair<ErrorRecord, std::wstring> GetModifyPath() noexcept
 		return std::pair(ErrorRecord(RootOpenResult, ActivityAccessingUninstallRegistry), MSICmd);
 	}
 
-	auto[InstallOpenResult, ExpectedInstallKey] {OpenRegistryKey(RootKey.get(), ExpectedWACGUID)};
+	auto[InstallOpenResult, OptInstallKeyName] { FindSubkeyWithExpectedKVP(RootKey.get(),
+		AppDisplayNameFieldName, ExpectedApplicationName)};
+	LSTATUS ActivityResult{ ERROR_SUCCESS };
 	if (InstallOpenResult == ERROR_SUCCESS)
 	{
-		auto[GetPathResult, DiscoveredPath] { GetKVPStringValue(ExpectedInstallKey.get(), AppModifyPathFieldName)};
-		return std::make_pair(ErrorRecord(GetPathResult, ActivitySearchingForWAC), DiscoveredPath);
-	}
-	if (InstallOpenResult == ERROR_FILE_NOT_FOUND)
-	{
-		auto[InstallOpenResult, OptInstallKeyName] { FindSubkeyWithExpectedKVP(RootKey.get(),
-			AppDisplayNameFieldName, ExpectedApplicationName)};
-		if (InstallOpenResult == ERROR_SUCCESS)
+		auto[OptOpenResult, OptInstallKey] {OpenRegistryKey(RootKey.get(), OptInstallKeyName)};
+		ActivityResult = OptOpenResult;
+		if (ActivityResult == ERROR_SUCCESS)
 		{
-			LSTATUS LastAccessResult;
-			auto[OptOpenResult, OptInstallKey] {OpenRegistryKey(RootKey.get(), OptInstallKeyName)};
-			LastAccessResult = OptOpenResult;
-			if (LastAccessResult == ERROR_SUCCESS)
-			{
-				auto[GetPathResult, DiscoveredPath] { GetKVPStringValue(OptInstallKey.get(), AppModifyPathFieldName)};
-				LastAccessResult = GetPathResult;
-				MSICmd = DiscoveredPath;
-			}
-			return std::make_pair(ErrorRecord(LastAccessResult, ActivitySearchingForWAC), MSICmd);
-		}
-		else
-		{
-			return std::pair(ErrorRecord(InstallOpenResult, ActivitySearchingForWAC), MSICmd);
+			auto[GetPathResult, DiscoveredPath] { GetKVPStringValue(OptInstallKey.get(), AppModifyPathFieldName)};
+			ActivityResult = GetPathResult;
+			MSICmd = DiscoveredPath;
 		}
 	}
-	else
-	{
-		return std::pair(ErrorRecord(InstallOpenResult, ActivitySearchingForInstallation), MSICmd);
-	}
+	return std::pair(ErrorRecord(ActivityResult, ActivitySearchingForInstallation), MSICmd);
 }
 
 static std::pair<ErrorRecord, int> GetListeningPort() noexcept
