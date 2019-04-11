@@ -5,8 +5,8 @@ Graphical tool for easy selection of certificates to use in Windows Admin Center
 ## Brief
 
 [Windows Admin Center](https://www.microsoft.com/en-us/cloud-platform/windows-admin-center) (WAC) is a powerful tool that allows you to monitor and maintain
-your Windows systems via a convenient HTML 5 interface. It uses a PKI certificate to encrypt your connection to its web interface. Unfortunately, it lacks an intuitive, simple interface for selecting the certificate to use. You must drill through the installed certificates to find the one that you want,
-copy the _Thumbprint_ value to a plain-text tool to clear out invalid characters, kick off the WAC installer, and paste in the thumbprint. The procedure is especially unpleasant if you installed WAC on Windows Server Core. [Microsoft has closed the UserVoice request to make this simpler](https://windowsserver.uservoice.com/forums/295071-management-tools/suggestions/33950335-how-do-windows-admin-center-change-certificate), indicating that they have no intention to improve the experience.
+your Windows systems via a convenient HTML 5 interface. It uses a PKI certificate to encrypt your connection to its web interface. Unfortunately, it lacks an intuitive, simple interface for selecting which certificate to present. You must drill through the installed certificates to find the one that you want,
+copy the _Thumbprint_ value to a plain-text tool to clear out invalid characters, kick off the WAC installer, and paste in the thumbprint. The procedure is especially unpleasant if you installed WAC on Windows Server Core. [Microsoft has closed the UserVoice request to make this simpler](https://windowsserver.uservoice.com/forums/295071-management-tools/suggestions/33950335-how-do-windows-admin-center-change-certificate), indicating that they intend to take it no further.
 
 The WAC Certificate Selector neatly solves the usability problem. If you have WAC installed and a valid certificate in the local computer certificate store, you select it and let WAC handle the rest.
 
@@ -19,10 +19,15 @@ This tool is currently in its first public beta. Please use caution if trying in
 The Windows Admin Certificate Selector requires:
 
 - Windows Server 2016 or later (including Core and Semi-Annual Channel), any edition
-- An installation of [Windows Admin Center](https://www.microsoft.com/en-us/cloud-platform/windows-admin-center) in gateway mode
+- An installation of [Windows Admin Center](https://www.microsoft.com/en-us/cloud-platform/windows-admin-center) in gateway mode. Only GA versions are supported.
 - A certificate in the local computer store with an Enhanced Key Usage of Server Authentication. It will work with self-signed certificates.
 - Local administrative privileges
 - _Recommended_: For the MSI package distribution only, an installation of the [Microsoft Visual C++ Redistributable for Visual Studio 2017](https://visualstudio.microsoft.com/downloads/) (look under the **Other Tools and Frameworks Section**). See the section on the MSI package for more information.
+
+**Warning**: This tool _does not_ work for the Windows Insider Preview 1903. The code in the master branch has been updated so that it will properly detect WAC 1903,
+but there appears to be a problem with Microsoft's WAC installer that causes it to refuse the certificate. It will accept the certificate without an error,
+but it will generate a new self-signed certificate and use that instead. You can test this behavior by following the official ["Install on Server Core"](https://docs.microsoft.com/en-us/windows-server/manage/windows-admin-center/deploy/install) instructions using the 1903 preview MSI. Once Microsoft corrects this problem,
+I will update the installer and issue a new release.
 
 ## Packages
 
@@ -43,7 +48,7 @@ The installer also makes these changes (configurable):
 
 ## Usage
 
-If you have not yet installed Windows Admin Center, run its installer. When prompted for certificate information, allow WAC to generate a self-signed certificate. Next, request a certificate from your provider, whether a PKI operated internally by your organization or a public PKI certificate retailer. The certificate must have the *Server Authentication* Enhanced Key Usage. Most providers include that in *Web Server* templates.Install the certificate into the local computer certificate store.
+If you have not yet installed Windows Admin Center, run its installer. When prompted for certificate information, allow WAC to generate a self-signed certificate. Next, request a certificate from your provider, whether a PKI operated internally by your organization or a public PKI certificate retailer. The certificate must have the _Server Authentication_ Enhanced Key Usage. Most providers include that in _Web Server_ templates.Install the certificate into the local computer certificate store.
 
 Once you have WAC installed and a certificate prepared, run WAC Certificate Selector. If you obtained the MSI installation package, it will optionally place a shortcut on your Start menu and add its program folder to the PATH. If you have the standalone EXE, run **CertWAC.exe** from the location where you placed it.
 
