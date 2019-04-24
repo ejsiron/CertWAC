@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="FB47D78A-0C8E-49E1-8564-366A8FAE0624" Name="WAC Certificate Selector" Language="1033" Version="0.9.1.0" Manufacturer="Eric Siron" UpgradeCode="f47bdbe7-d4c6-4852-adfb-57ccac6bcb1a">
+  <Product Id="6E9C07D1-61BA-40CB-A959-DF90F5B83DC1" Name="WAC Certificate Selector" Language="1033" Version="0.9.3.0" Manufacturer="Eric Siron" UpgradeCode="f47bdbe7-d4c6-4852-adfb-57ccac6bcb1a">
     <Package InstallerVersion="301" Compressed="yes" InstallScope="perMachine" />
 
-    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." Disallow="no" AllowSameVersionUpgrades="yes" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." Disallow="no" />
     <MediaTemplate CabinetTemplate="wc{0}.cab" CompressionLevel="high" EmbedCab="yes" />
 
     <!-- Icon that appears in arp -->
@@ -13,9 +13,9 @@
     <!-- Feature Configuration -->
     <Feature Id="ProductFeature" Title="WAC Certificate Selector" Level="1" ConfigurableDirectory="INSTALLFOLDER">
       <ComponentGroupRef Id="ProductComponents" />
-      <Feature Id="ProductStartMenuIcon" Title="Start Menu Icon" Description="Program group and shortcut icon in the system Start menu" Level="1">
+      <!--<Feature Id="ProductStartMenuIcon" Title="Start Menu Icon" Description="Program group and shortcut icon in the system Start menu" Level="1">
         <ComponentRef Id="ApplicationShortcut"/>
-      </Feature>
+      </Feature>-->
       <Feature Id="ProductPathModification" Title="Add to system PATH" Description="Modify the system PATH environment path to include the program folder" Level="1">
         <ComponentRef Id="SetPath"/>
       </Feature>
@@ -25,7 +25,6 @@
     </Feature>
 
     <!-- UI Configuration -->
-    <!--<UIRef Id="WixUI_Mondo"/>-->
     <WixVariable Id="WixUILicenseRtf" Value="MITLicense.rtf"/>
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch WAC Certificate Selector"/>
@@ -63,15 +62,26 @@
 
   <!-- Main executable file -->
   <Fragment>
+    <Icon Id="EXE.ico" SourceFile="$(var.Program.TargetDir)\CertWAC.exe"/>
     <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
       <Component Id="ProductComponent">
-        <File Id="EXEMAIN" Name="CertWAC.exe" DiskId="1" Source="$(var.Program.TargetDir)" KeyPath="yes"/>
+        <File Id="EXEMAIN" Name="CertWAC.exe" DiskId="1" Source="$(var.Program.TargetDir)" KeyPath="yes">
+          <Shortcut Id="ApplicationStartMenuShortcut"
+          Name="WAC Certificate Selector"
+          Advertise="yes"
+          Description="Select the certificate to use with Windows Admin Center"
+          Directory="ApplicationProgramsFolder"
+          WorkingDirectory="INSTALLFOLDER"
+          Icon="EXE.ico"
+          />
+        </File>
+        <RemoveFolder Id="CleanUpShortcut" Directory="ApplicationProgramsFolder" On="uninstall"/>
       </Component>
     </ComponentGroup>
   </Fragment>
 
   <!-- Start menu shortcut -->
-  <Fragment>
+  <!--<Fragment>
     <DirectoryRef Id="ApplicationProgramsFolder">
       <Component Id="ApplicationShortcut" Guid="4D9D8172-6BA0-46F3-8EFF-2FE1A0A35B3F">
         <Shortcut Id="ApplicationStartMenuShortcut"
@@ -83,7 +93,7 @@
         <RemoveFolder Id="CleanUpShortcut" Directory="ApplicationProgramsFolder" On="uninstall"/>
       </Component>
     </DirectoryRef>
-  </Fragment>
+  </Fragment>-->
 
   <!-- Set PATH -->
   <Fragment>
@@ -92,9 +102,5 @@
         <Environment Id="PATH" Name="PATH" Value="[INSTALLFOLDER]" Permanent="no" Part="last" Action="set" System="yes"/>
       </Component>
     </DirectoryRef>
-  </Fragment>
-
-  <Fragment>
-
   </Fragment>
 </Wix>
