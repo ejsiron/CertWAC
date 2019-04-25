@@ -13,9 +13,6 @@
     <!-- Feature Configuration -->
     <Feature Id="ProductFeature" Title="WAC Certificate Selector" Level="1" ConfigurableDirectory="INSTALLFOLDER">
       <ComponentGroupRef Id="ProductComponents" />
-      <!--<Feature Id="ProductStartMenuIcon" Title="Start Menu Icon" Description="Program group and shortcut icon in the system Start menu" Level="1">
-        <ComponentRef Id="ApplicationShortcut"/>
-      </Feature>-->
       <Feature Id="ProductPathModification" Title="Add to system PATH" Description="Modify the system PATH environment path to include the program folder" Level="1">
         <ComponentRef Id="SetPath"/>
       </Feature>
@@ -79,21 +76,6 @@
       </Component>
     </ComponentGroup>
   </Fragment>
-
-  <!-- Start menu shortcut -->
-  <!--<Fragment>
-    <DirectoryRef Id="ApplicationProgramsFolder">
-      <Component Id="ApplicationShortcut" Guid="4D9D8172-6BA0-46F3-8EFF-2FE1A0A35B3F">
-        <Shortcut Id="ApplicationStartMenuShortcut"
-          Name="WAC Certificate Selector"
-                  Description="Select the certificate to use with Windows Admin Center"
-                  Target="[#EXEMAIN]"
-                  WorkingDirectory="INSTALLFOLDER"
-        />
-        <RemoveFolder Id="CleanUpShortcut" Directory="ApplicationProgramsFolder" On="uninstall"/>
-      </Component>
-    </DirectoryRef>
-  </Fragment>-->
 
   <!-- Set PATH -->
   <Fragment>
