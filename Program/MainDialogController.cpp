@@ -52,7 +52,6 @@ void MainDialog::Refresh()
 {
 	// load and process WAC installation information
 	auto[InfoLoadError, ModifyPath, Port] {GetWACInstallInfo()};
-	SetPictureBoxImage(IDC_ICONWACINSTALLED, InfoLoadError.ErrorCode() == ERROR_SUCCESS);
 	CmdlineModifyPath = ModifyPath;
 	SetDlgItemText(HandleDialogMain, IDC_PORT, std::to_wstring(Port).c_str());
 	if (InfoLoadError.ErrorCode() != ERROR_SUCCESS)

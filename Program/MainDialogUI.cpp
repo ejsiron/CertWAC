@@ -94,8 +94,6 @@ INT_PTR CALLBACK MainDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM
 	break;
 	case WM_CLOSE:
 		DestroyWindow(HandleDialogMain);
-		DeleteObject(TinyGreenBox);
-		DeleteObject(TinyRedBox);
 		return TRUE;
 	case WM_DESTROY:
 		PostQuitMessage(0);
@@ -154,26 +152,13 @@ void MainDialog::DisplayCertificate()
 		StatusGreenServerAuth = Certificate.HasServerAuthentication();
 		StatusGreenPrivateKey = Certificate.HasPrivateKey();
 	}
-	SetPictureBoxImage(IDC_ICONCERTVALID, StatusGreenCertificateValid);
-	SetPictureBoxImage(IDC_ICONSERVAUTHALLOWED, StatusGreenServerAuth);
-	SetPictureBoxImage(IDC_ICONHASPRIVATEKEY, StatusGreenPrivateKey);
 	SetDlgItemText(HandleDialogMain, IDC_CERTDETAILS, CertificateText.c_str());
 	EnableDialogItem(IDOK, StatusGreenWACDetection && StatusGreenCertificateValid &&
 		StatusGreenServerAuth && StatusGreenPrivateKey);
 }
 
-void MainDialog::SetPictureBoxImage(const INT PictureBoxID, const bool Good)
-{
-	HBITMAP SelectedImage = Good ? TinyGreenBox : TinyRedBox;
-	SendDlgItemMessage(HandleDialogMain, PictureBoxID, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)SelectedImage);
-}
-
 const void MainDialog::InitDialog() noexcept
 {
-	AppIcon = LoadIcon(AppInstance, MAKEINTRESOURCE(IDI_CERTWAC));
-	TinyGreenBox = LoadBitmap(AppInstance, MAKEINTRESOURCE(IDB_TINYGREENBOX));
-	TinyRedBox = LoadBitmap(AppInstance, MAKEINTRESOURCE(IDB_TINYREDBOX));
-	SendMessage(HandleDialogMain, WM_SETICON, ICON_SMALL, (LPARAM)AppIcon);
 	Refresh();
 }
 

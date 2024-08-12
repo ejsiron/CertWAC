@@ -12,8 +12,6 @@ private:
 	HICON AppIcon{ 0 };
 	static INT_PTR CALLBACK SharedDialogProc(HWND hDialog, UINT uMessage, WPARAM wParam, LPARAM lParam);
 	INT_PTR CALLBACK ThisDialogProc(UINT uMessage, WPARAM wParam, LPARAM lParam);
-	HBITMAP TinyGreenBox{ 0 };
-	HBITMAP TinyRedBox{ 0 };
 
 	/* Controller components */
 	std::vector<ComputerCertificate> Certificates{};
@@ -24,7 +22,6 @@ private:
 	void EnableDialogItem(const int DialogItem, const bool Enable = true) const noexcept { EnableWindow(GetDlgItem(HandleDialogMain, DialogItem), Enable); };
 	void DisplayCertificateList() noexcept;
 	void DisplayCertificate();
-	void SetPictureBoxImage(const INT PictureBoxID, const bool Good = true);
 	void StartActions();
 
 public:
