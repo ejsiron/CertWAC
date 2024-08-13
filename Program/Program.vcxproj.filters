@@ -45,6 +45,9 @@
     <ClInclude Include="WindowsUtility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AppController.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CertWAC.rc">
@@ -86,6 +89,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="WindowsUtility.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AppController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

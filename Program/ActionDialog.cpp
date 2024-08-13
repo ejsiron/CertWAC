@@ -43,7 +43,7 @@ INT_PTR CALLBACK ActionDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPAR
 	{
 	case WM_INITDIALOG:
 		SetWindowLongPtr(HandleDialogAction, GWL_USERDATA, (LONG_PTR)this);
-		CenterInParent(HandleDialogMain, HandleDialogAction);
+		CenterInParent(HandleOwner, HandleDialogAction);
 		InitiateAction();
 		break;
 	case WM_CLOSE:
@@ -58,8 +58,8 @@ INT_PTR CALLBACK ActionDialog::ThisDialogProc(UINT uMessage, WPARAM wParam, LPAR
 }
 
 ActionDialog::ActionDialog(const HINSTANCE Instance, const HWND Parent, const std::vector<std::tuple<std::wstring, std::wstring, std::wstring>>& Actions)
-	:AppInstance(Instance), HandleDialogMain(Parent), DialogActions(Actions)
+	:AppInstance(Instance), HandleOwner(Parent), DialogActions(Actions)
 {
-	DialogBoxParam(Instance, MAKEINTRESOURCE(IDD_ACTIONDIALOG), HandleDialogMain, &SharedDialogProc, (LPARAM)this);
+	DialogBoxParam(Instance, MAKEINTRESOURCE(IDD_ACTIONDIALOG), HandleOwner, &SharedDialogProc, (LPARAM)this);
 	PostQuitMessage(0);
 }

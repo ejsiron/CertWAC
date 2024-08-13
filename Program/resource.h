@@ -29,9 +29,8 @@
 #define IDC_RE_SERVERAUTHEKU2           1020
 #define IDC_RE_PRIVATEKEY               1020
 #define IDC_GROUP_INSTALLER             1021
-#define IDC_EDIT2                       1022
-#define IDC_BUTTON1                     1023
-#define IDC_BUTTON_BROWSEINSTALLER      1023
+#define IDC_BUTTON_BROWSEINSTALLER      1022
+#define IDC_INSTALLER						1023
 
 // Next default values for new objects
 // 

@@ -30,7 +30,8 @@ public:
 	MainDialog& operator=(const MainDialog&) = delete;
 	MainDialog(MainDialog&&) = default;
 	MainDialog& operator=(MainDialog&&) = default;
-	void Show(int ShowCommand) const noexcept { ShowWindow(HandleDialogMain, ShowCommand); }
-	const HWND GetWindowHandle() const noexcept { return HandleDialogMain; }
+	~MainDialog() = default;
+
+	HWND Show(int ShowCommand) const noexcept;
 	void AssignModifyPath(const std::wstring& NewPath) { CmdlineModifyPath = NewPath; }
 };

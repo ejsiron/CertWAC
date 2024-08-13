@@ -39,6 +39,12 @@ static std::wstring ConvertSplitForDisplay(const std::wstring& GluePattern, cons
 	return ConvertSplitForDisplay(SplitString(GluePattern, Composite));
 }
 
+HWND MainDialog::Show(int ShowCommand) const noexcept
+{
+	ShowWindow(HandleDialogMain, ShowCommand);
+	return HandleDialogMain;
+}
+
 INT_PTR CALLBACK MainDialog::SharedDialogProc(HWND hDialog, UINT uMessage, WPARAM wParam, LPARAM lParam)
 {
 	MainDialog* AppDialog{ nullptr };
