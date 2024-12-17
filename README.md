@@ -2,6 +2,12 @@
 
 Graphical tool for easy selection of certificates to use in Windows Admin Center
 
+## Archive Notice
+
+Starting with Windows Admin Center version 2410 (v2), Microsoft's installer includes a drop-down box for selecting the certificate (it works much like this app). That means that this app does not currently provide value. If you want to look at some code for accessing PKI certificates on Windows using C++ and Win32, you might find some use for the code.
+
+Thanks everyone for supporting this project!
+
 ## Brief
 
 [Windows Admin Center](https://www.microsoft.com/en-us/cloud-platform/windows-admin-center) (WAC) is a powerful tool that allows you to monitor and maintain your Windows systems via a convenient HTML 5 interface. It uses a PKI certificate to encrypt your connection to its web interface. Unfortunately, it lacks an intuitive, simple interface for selecting which certificate to present. You must drill through the installed certificates to find the one that you want, copy the _Thumbprint_ value to a plain-text tool to clear out invalid characters, start the WAC installer, and paste in the thumbprint. The procedure is especially unpleasant if you installed WAC on Windows Server Core. [Microsoft has closed the UserVoice request to make this simpler](https://windowsserver.uservoice.com/forums/295071-management-tools/suggestions/33950335-how-do-windows-admin-center-change-certificate), indicating that they currently have no intent to make this easier.
